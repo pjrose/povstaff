@@ -44,3 +44,8 @@ images/full
 *backups/*.*
 desktop.ini
 images/hexafire.bmp
+
+# Local builds and private credentials
+.build/
+code/POV4.1/LocalConfig.h
+code/POV4.1/build/

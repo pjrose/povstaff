@@ -1,23 +1,11 @@
-# POV Staff Software
+# POV Staff firmware
 
-This folder contains software for POV Staff project, V4.  It is intended to be complied
-and uploaded to the QT Py ESP32-S3 (or QT Py ESP32-S2) using Arduino IDE  version
-1.8 or later.   You will need the following libraries:
+The maintained sketch is `POV4.1/POV4.1.ino`, implementing the version 5 breaking replacement for Island Robotics V4.1 hardware and the 8 MB Adafruit QT Py ESP32-S3.
 
-  * POV-ESP32 library from  https://github.com/shurik179/pov-esp32
+See [BUILD.md](../BUILD.md) for pinned dependencies, board/partition settings, USB flashing, Arduino IDE setup and both OTA methods. See [README.md](../README.md) for dashboard operation and [MIGRATION.md](../MIGRATION.md) for changes from stock.
 
-  * Adafruit DotStar
+No `pov-esp32` or `ESPxWebFlMgr` installation is needed. Load light sequences through the dashboard.
 
-  * Adafruit NeoPixel
+Installed release 5.0.4 retains the open staff AP, no dashboard login and password-free ArduinoOTA. Optional home Wi-Fi credentials remain saved in NVS and apply on the next boot. The current hardware setup is left in saved client mode with all eight images retained. The USB port observed after hardware CDC re-enumeration is COM5.
 
-  * ESPxWebFlMgr from   https://github.com/holgerlembke/ESPxWebFlMgr
-
-You will need the arduino core for ESP32, see https://learn.adafruit.com/adafruit-qt-py-esp32-s2/arduino-ide-setup
-for installation instructions.
-
-Make sure that you choose the following options in the Arduino IDE tools menu
-(for ESP32-S3):
-
-* Partition scheme: *Default (3MB APP/1.5MB SPIFFS)*
-
-* Erase All Flash Before Sketch Upload: *Disabled*
+Version 5.0.4 adds USB-host detection and USB supply classification, with brightness capped at 16/255 and estimated LED current at 500 mA whenever a USB host is detected. Output telemetry and live dashboard checks passed with the serial monitor closed; physical LED observation and electrical-current measurement remain outstanding. Battery voltage protection remains enabled.
