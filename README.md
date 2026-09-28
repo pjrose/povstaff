@@ -15,9 +15,15 @@ Start with [BUILD.md](BUILD.md) for the first USB flash, [TESTING.md](TESTING.md
 
 `imagelist.txt` is no longer used. No filesystem flashing tool or separate uploader mode is needed. The two sample BMPs in `images/` can be uploaded directly.
 
+Installed release **5.1.1** includes sequence previews in the dashboard. Preview a file as a spinning staff with an 85 ms light trail, stationary animated LEDs, or a full-rotation long exposure. Play/pause and frame scrubbing let you inspect individual rows. Speed defaults to **80 RPM** (750 ms per BMP cycle), adjustable from 20 to 200 RPM. Choosing a preview does not change the real staff's selected sequence or lighting mode.
+
+The preview follows the documented assembly: two identical **72-pixel, 50 cm arms** separated by a **41 cm unlit central grip**, with pixel 0 at each inner end and pixel 71 at each tip. It approximates a centered staff playing one BMP per turn; it is not a calibrated prediction of its physical appearance. [See the live sequence preview](docs/images/sequence-preview.png).
+
+The browser fetches each uncached BMP once and animates it locally, retaining up to 12 decoded images in memory. No generated videos or preview assets are stored in LittleFS. This keeps preview storage overhead off the staff and avoids repeated network traffic during animation. Version 5.1.1 is installed on the home network with all eight images retained.
+
 To use home Wi-Fi, select **Client** in Settings, enter the SSID/password, save, then **power cycle**. Saving never changes the current connection. Client mode has a ten-second connection window, then enables the staff AP if unsuccessful. Losing the home network also enables the AP. Fallback stops client scans and stays in AP mode until the next boot, when the saved client choice is retried. The same dashboard, uploads and OTA are available on either connection. Client mode remains an explicit saved choice; factory default is always AP.
 
-Installed version **5.0.4** adds USB-powered lighting to the password-free networking introduced in 5.0.3. The staff AP has no password, the dashboard has no login, and ArduinoOTA needs no password. Home Wi-Fi credentials remain saved privately in NVS. Anyone connected to the staff AP or able to reach it on the home LAN can control it and upload files or firmware.
+Version 5.1.1 retains USB-powered lighting introduced in 5.0.4 and password-free networking introduced in 5.0.3. The staff AP has no password, the dashboard has no login, and ArduinoOTA needs no password. Home Wi-Fi credentials remain saved privately in NVS. Anyone connected to the staff AP or able to reach it on the home LAN can control it and upload files or firmware.
 
 The current bench setup uses saved home Wi-Fi; open **http://povstaff.local/** or **http://192.168.4.44/** while on that LAN. The numerical address can change with DHCP. See [TESTING.md](TESTING.md) for completed hardware checks and the remaining electrical and lighting checks.
 

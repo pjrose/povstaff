@@ -1,13 +1,15 @@
 # Local dashboard API
 
-HTTP port 80 on either the open staff AP or configured LAN. The 5.0.4 API retains the password-free access introduced in 5.0.3: no login or Authorization header. Every mutation requires `X-POV-Request: 1`; this is a browser request check, not an authentication secret. No CORS access is granted. Ordinary POST bodies use `application/x-www-form-urlencoded`; binary uploads use the streaming contract below.
+HTTP port 80 on either the open staff AP or configured LAN. Installed version **5.1.1** requires no login or Authorization header. Every mutation requires `X-POV-Request: 1`; this is a browser request check, not an authentication secret. No CORS access is granted. Ordinary POST bodies use `application/x-www-form-urlencoded`; binary uploads use the streaming contract below.
 
 Successful mutations return `{"ok":true}`. Errors return `{"ok":false,"error":"..."}` and a non-2xx status. Missing mutation headers return HTTP 403. A deliberately rejected/aborted transfer can close the socket without a JSON body.
 
 | Method | Path | Arguments / response |
 | --- | --- | --- |
 | GET | `/api/status` | `version`, `uptime` seconds, `heap` bytes, `engine`, `network`, `storage` objects |
-| GET | `/api/files` | `files[]` (`index`, `name`, `bytes`, `width`, `height`, `active`), current selection, duration, count, error |
+| GET | `/api/files` | `files[]` (`index`, `name`, `bytes`, `width`, `height`, `active`), current selection, duration, count, error, catalogue `revision` |
+| GET | `/api/files/content?name=example.bmp` | Raw validated BMP bytes for one allowed basename |
+| GET | `/preview.js` | Browser preview module served from firmware flash |
 | POST | `/api/mode` | `name`: `auto`, `pov`, `led_test`, `idle`, `walking_stick`, `sword`, `flashlight`, `solid`, `breathing`, `rainbow`, `chase`, `battery`, `off` |
 | POST | `/api/pattern` | `name`: registered pattern, including `rainbow`, `pixel_walk`, `channels`, `fade`, `breathing`, `chase`; affects LED Test |
 | POST | `/api/brightness` | `value`: integer 0–64 by default, bounded by `Config::MAX_BRIGHTNESS` |
@@ -24,6 +26,12 @@ Successful mutations return `{"ok":true}`. Errors return `{"ok":false,"error":".
 | POST | `/api/storage/format` | `confirm=ERASE`; permanently clears sequence storage only |
 | POST | `/api/ota` | Raw application `.bin`; headers below. Validated success schedules reboot. |
 | POST | `/api/reboot` | Responds, then reboots; saved Wi-Fi settings apply |
+
+## Sequence preview reads
+
+`/api/files/content` accepts the same restricted BMP basenames as uploads. It validates the filename and BMP header before serving bytes, with no arbitrary filesystem access. The response streams in 1 KB chunks and updates the lighting engine between writes. Reading a preview does not select a real sequence or change the staff's mode.
+
+The catalogue `revision` changes on reload, upload, deletion and formatting, but not on ordinary sequence selection. The dashboard uses it to invalidate decoded preview images when file contents may have changed. Its cache holds at most 12 decoded BMPs in browser memory. Once a file is fetched, animation, speed adjustment, pause and frame scrubbing run locally without further image requests. `/preview.js` is embedded in program flash; neither that module nor generated preview videos consume sequence storage.
 
 ## Streaming uploads
 

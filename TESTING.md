@@ -45,11 +45,23 @@ These observations come from the connected physical staff, separate from the sim
 - [x] Valid BMP upload and replacement completed. Malformed images were rejected, and an aborted replacement recovered without destroying the existing file. The original eight images were preserved.
 - [x] The official `espota.py` uploader completed firmware transfer with Python 3.12 and explicit host binding; the staff rebooted and reported the installed version. The standalone `espota.exe` path was blocked by existing Windows firewall rules; no firewall settings were changed.
 
-The installed credential-free release is **5.0.4**, using 1,120,041 bytes of program storage and 122,312 bytes of static RAM. Earlier versions remain identified above to distinguish their completed tests from the final USB-power checks below.
+The installed release is **5.1.1**, using **1,135,713 bytes** of program storage and **122,320 bytes** of static RAM. Earlier versions remain identified above to preserve the history of completed hardware checks.
 
 Version 5.0.3 reported **4.71–4.72 V** during USB bench testing and held the main LEDs black because this exceeded its battery range. Version 5.0.4 addresses this by classifying 4.45–5.50 V as a USB supply only when hardware CDC positively detects a USB host. Host detection does not require an open serial monitor. With any detected USB host, brightness is capped at 16/255 and estimated LED current at 500 mA, including at battery-range voltage. The supply reading remains uncalibrated. The completed network/upload results do **not** validate visible lighting, battery voltage accuracy, operating current, cold-start endurance or Android behavior.
 
-## USB power checks for installed 5.0.4
+## Completed preview checks for 5.1.1
+
+- [x] Password-free official `espota.py` completed the 5.1.1 update with exit code zero. Post-reboot status confirmed 5.1.1, home client connection, USB power without critical lockout and all eight images.
+- [x] Storage usage remained **331,776 bytes**; no generated videos or preview assets were written to LittleFS.
+- [x] All host tests passed, including preview timing, the 12-image browser cache and revision-based invalidation. Live replacement/invalidation has not been separately exercised.
+- [x] On 5.1.0, all eight live BMP downloads matched their advertised lengths, both repository sample hashes matched, invalid paths returned HTTP 400 and a missing file returned 404. Previewing another image left actual selection and mode unchanged.
+- [x] Live browser geometry checks passed on installed 5.1.1 for spinning, stationary and full-exposure views, without console errors. The model has two identical 72-pixel, 50 cm arms, a 41 cm dark grip and pixel 0 at the inner ends / 71 at the tips. [Live preview screenshot](docs/images/sequence-preview.png).
+- [x] Desktop and 390-pixel viewport layouts were checked. Actual Android testing remains outstanding.
+- [x] After OTA, user settings were restored to locked POV, requested brightness 18, color `ba66ff`, pattern `pixel_walk` and sequence duration 15 seconds. The active sequence advances automatically; preview selection remains independent.
+- [ ] Observe physical lighting continuity during downloads and compare real spinning appearance with the illustrative preview.
+- [ ] Test preview controls on an actual Android device and exercise replacement/invalidation live.
+
+## Historical USB power checks on 5.0.4
 
 The serial monitor remained closed throughout these checks.
 

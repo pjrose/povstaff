@@ -13,6 +13,7 @@ bool fsReady = false, imageReady = false;
 size_t imageCount = 0;
 int selected = -1;
 uint32_t imageRevision = 0, selectedAt = 0;
+uint32_t catalogueRevision = 0;
 uint32_t intervalSeconds = Config::DEFAULT_SEQUENCE_SECONDS;
 String lastError;
 
@@ -37,6 +38,7 @@ bool begin() {
   return reload();
 }
 bool format() {
+  ++catalogueRevision;
   imageReady = false; imageCount = 0; selected = -1; ++imageRevision;
   LittleFS.end(); fsReady = false;
   if (!LittleFS.format()) { lastError = "Filesystem format failed"; return false; }
@@ -53,6 +55,7 @@ bool validateBMP(const char* path, String& reason) {
 }
 bool reload() {
   if (!fsReady) return false;
+  ++catalogueRevision;
   char previous[49] = {};
   if (selected >= 0 && size_t(selected) < imageCount) strcpy(previous, catalogue[selected].name);
   imageReady = false; imageCount = 0; selected = -1; ++imageRevision;
@@ -155,7 +158,7 @@ String filesJSON() {
     json += ",\"active\":"; json += int(i) == selected ? "true}" : "false}";
   }
   json += "],\"currentIndex\":" + String(selected) + ",\"currentName\":\"" + currentName();
-  json += "\",\"duration\":" + String(intervalSeconds) + ",\"count\":" + String(imageCount);
+  json += "\",\"duration\":" + String(intervalSeconds) + ",\"count\":" + String(imageCount) + ",\"revision\":" + String(catalogueRevision);
   // lastError consists only of fixed firmware messages and decimal counts.
   json += ",\"error\":\"" + lastError + "\"}";
   return json;

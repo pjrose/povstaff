@@ -28,15 +28,19 @@ int main() {
   assert(Sequences::begin()); assert(LittleFS.files.count("/.upload.tmp") == 0);
   assert(Sequences::count() == 2); assert(std::strcmp(Sequences::currentName(), "a.bmp") == 0);
   assert(std::strstr(Sequences::error(), "skipped"));
+  const std::string catalogueBeforeSelect = Sequences::filesJSON().c_str();
+  assert(catalogueBeforeSelect.find("\"revision\":1") != std::string::npos);
   uint8_t rgb[216];
   assert(Sequences::readLine(0,rgb)); assert(rgb[0]==0 && rgb[2]==255);
   assert(Sequences::readLine(1,rgb)); assert(rgb[0]==255 && rgb[2]==0);
   assert(Sequences::readLine(2,rgb)); assert(rgb[2]==255); // wraps
   assert(Sequences::select(1)); assert(Sequences::readLine(0,rgb)); assert(rgb[0]==255); // bottom-up reversed
+  assert(std::strstr(Sequences::filesJSON().c_str(), "\"revision\":1")); // playback does not invalidate browser previews
   assert(!Sequences::select(99)); assert(Sequences::currentIndex()==1);
   assert(Sequences::next()); assert(Sequences::currentIndex()==0);
   assert(Sequences::next(-1)); assert(Sequences::currentIndex()==1);
   assert(Sequences::reload()); assert(Sequences::currentIndex()==1); // preserve selection by name
+  assert(std::strstr(Sequences::filesJSON().c_str(), "\"revision\":2")); // content reload does invalidate previews
   Sequences::setDuration(15);
   testMillis += 60000; // selected image waited while a procedural mode ran
   const uint32_t revisionBeforeResume = Sequences::revision();

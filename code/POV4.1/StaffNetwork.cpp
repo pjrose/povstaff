@@ -1,6 +1,7 @@
 #include "StaffNetwork.h"
 #include "Config.h"
 #include "Dashboard.h"
+#include "Preview.h"
 #include "Engine.h"
 #include "Sequences.h"
 #include "NetworkValidation.h"
@@ -250,6 +251,40 @@ void routes() {
     json(200, value);
   });
   server.on("/api/files", HTTP_GET, []() { if (guard()) json(200, Sequences::filesJSON()); });
+  server.on("/preview.js", HTTP_GET, []() {
+    server.sendHeader("Cache-Control", "no-store");
+    server.sendHeader("X-Content-Type-Options", "nosniff");
+    server.send_P(200, "text/javascript; charset=utf-8", PREVIEW_JS);
+  });
+  server.on("/api/files/content", HTTP_GET, []() {
+    if (!guard()) return;
+    const String name = server.arg("name");
+    if (!Sequences::validName(name)) { fail("Invalid file name"); return; }
+    String reason;
+    const String path = "/" + name;
+    if (!Sequences::validateBMP(path.c_str(), reason)) { fail(reason, 404); return; }
+    File file = LittleFS.open(path, FILE_READ);
+    if (!file) { fail("Image unavailable", 404); return; }
+    server.sendHeader("Cache-Control", "no-store");
+    server.sendHeader("X-Content-Type-Options", "nosniff");
+    server.setContentLength(file.size());
+    server.send(200, "image/bmp", "");
+    auto client = server.client();
+    client.setTimeout(1000);
+    uint8_t buffer[1024];
+    size_t remaining = file.size();
+    const uint32_t started = millis();
+    // One bounded download; keep rendering between network writes. Animation
+    // and the twelve-entry preview cache live entirely in the browser.
+    while (remaining && client.connected() && uint32_t(millis()-started) < 5000) {
+      const size_t bytes = file.read(buffer, remaining < sizeof(buffer) ? remaining : sizeof(buffer));
+      if (!bytes || client.write(buffer, bytes) != bytes) break;
+      remaining -= bytes;
+      Engine::update();
+      delay(0);
+    }
+    if (remaining) client.stop();
+  });
   server.on("/api/wifi", HTTP_POST, saveWifi);
   server.on("/api/mode", HTTP_POST, []() { if (!guard(true)) return; if (!Engine::setMode(server.arg("name"))) fail("Unknown mode"); else ok(); });
   server.on("/api/pattern", HTTP_POST, []() { if (!guard(true)) return; if (!Engine::setPattern(server.arg("name"))) fail("Unknown pattern"); else ok(); });

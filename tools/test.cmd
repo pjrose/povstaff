@@ -26,4 +26,6 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 node tests\dashboard_test.cjs
 if errorlevel 1 exit /b 1
+node tests\preview_test.cjs
+if errorlevel 1 exit /b 1
 echo All host tests passed.
