@@ -25,34 +25,26 @@ Materials
 
 **Steps:**
 
-1. Before doing any work, get  the  ESP32-S2 Qt Py
-   microcontroller from the bag and  test it. To do that, connect it by USB
-   cable to a computer or
-   charger to power it up. The on-board NeoPixel LED should blink red, then
-   yellow, then turn green.  **Wait  for 20-30 seconds** and open  the WiFi
-   connection dialog of your computer. You
-   should see there a new WiFi network with the name `POVSTAFFXXXX`, where XXXX
-   will be replaced by a 4-digit number, unique for each staff. Connect to this
-   network; the password is in the information sheet
-   which was included with your kit -  if you misplaced it,
-   email `irobotics.store@gmail.com` for help.
-   Type the following address in the URL field of the browser: `http://povstaff.local:8080`
-   (note: the staff doesn't support https protocol. If your browser gives you a
-   warning about unsecure connection, click on "continue to site".)
-   You should see the webpage of the staff, which looks as follows:
+1. Before assembly, connect the QT Py ESP32-S3 to a computer using a
+   data-capable USB-C cable. If current firmware is not installed, follow
+   :doc:`build-programming` first.
 
-   .. figure:: images/upload.png
-       :alt: Upload web page
+   On a fresh configuration, join the open ``POVSTAFFxxxx`` Wi-Fi network;
+   no password is required. Open http://192.168.4.1/ or
+   http://povstaff.local/. If home client mode was already saved, use that
+   network instead. A missing saved network enables the staff AP after about
+   ten seconds.
+
+   .. figure:: images/dashboard-live.png
+       :alt: Current staff dashboard
        :width: 80%
 
-
-
-   If you see the files `imagelist.txt`, `rg-lines.bmp` and `bg-triangles.bmp`,
-   everything is good - you can disconnect the USB cable and proceed. Otherwise,
-   check the troubleshooting section.
-
-
-
+   Confirm that the dashboard loads and reports firmware and network status.
+   An unattached controller may report an absent IMU or unavailable supply
+   reading; this check establishes network/software access before assembly.
+   Uploaded files are not required for this check. Disconnect USB before
+   soldering and continue below. Use :doc:`usage-upload` to load BMPs after
+   assembly; there is no separate uploader mode or image-list file.
 
 2. Solder the headers to the custom  POV controller shield as shown below.
    **Make sure to solder it on the correct side of the board.**  The easiest way

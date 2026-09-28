@@ -1,97 +1,72 @@
 # Build and flash
 
-## Verified target and dependency pins
+The maintained sketch is `code/POV4.1/POV4.1.ino` for **Island Robotics V4.1 / Adafruit QT Py ESP32-S3 with 8 MB flash and no PSRAM**. See [README.md](README.md) for operation and [API.md](API.md) for automation.
 
-Target reported by the connected board: ESP32-S3 QFN56 revision v0.2, 240 MHz, 40 MHz crystal, **8 MB embedded flash**, USB Serial/JTAG. Select **Adafruit QT Py ESP32-S3 No PSRAM**, not the 4 MB/2 MB PSRAM variant. No PSRAM is required.
+## Toolchain
 
 | Component | Version / setting |
 | --- | --- |
 | Arduino CLI | 1.5.1 |
 | ESP32 Arduino core | 3.3.11 |
-| Xtensa compiler | GCC 14.2.0, esp-x32 tool package 2601 |
 | Adafruit DotStar | 1.2.5 |
 | Adafruit NeoPixel | 1.15.5 |
-| Adafruit BusIO | 1.17.4 (DotStar dependency) |
+| Adafruit BusIO | 1.17.4 |
 | Board | `esp32:esp32:adafruit_qtpy_esp32s3_nopsram` |
-| Partition scheme | `default_8MB` — two 0x330000-byte app slots, 0x180000-byte LittleFS partition |
-| USB mode | Hardware CDC and JTAG (`hwcdc`) |
-| USB CDC on boot | Enabled (`cdc`) |
+| Partition scheme | `default_8MB`: two 0x330000-byte app slots, 0x180000-byte LittleFS |
+| USB mode / CDC on boot | Hardware CDC and JTAG (`hwcdc`) / enabled (`cdc`) |
 | Erase all flash | Disabled (`none`) |
 
-Wi-Fi, networking, WebServer, ESPmDNS, ArduinoOTA, Update, Preferences, FS, LittleFS, SPI and Wire come with the core. No ArduinoJson, asynchronous web framework, cloud service or CDN is required. The stock `pov-esp32` and `ESPxWebFlMgr` dependencies are not part of this build.
+The ESP32 core supplies networking, storage and OTA libraries. No separate filesystem image or preview assets are needed: the dashboard and preview module are embedded in firmware.
 
-## Build on Windows
+## Build and test
 
-The script uses `arduino-cli` on PATH, or the CLI bundled with Arduino IDE in its standard Windows location. It does not flash unless a port is explicitly supplied.
+Run from the repository root on Windows:
 
 ```powershell
-cd D:\povstaff
-# First build only: installs the pinned core/libraries.
+# Install pinned dependencies and build:
 .\tools\build.ps1 -Setup
 # Subsequent builds:
 .\tools\build.ps1
+# Host tests (Visual Studio C++ Build Tools and Node.js required):
+.\tools\test.cmd
 ```
 
-If needed, pass `-ArduinoCli 'C:\path\to\arduino-cli.exe'`. Output is in `.build/release/`. Keep the application file **POV4.1.ino.bin** for OTA. `merged.bin`, partition binaries and bootloader binaries must never be sent to OTA.
+The build script finds Arduino CLI on PATH or in the standard Arduino IDE installation. Pass `-ArduinoCli` to use another executable. Output goes to `.build/release/`; **POV4.1.ino.bin** is the application image used for OTA.
 
-Installed release **5.1.3** retains the open staff AP, dashboard without a login, and password-free ArduinoOTA. No staff credentials need configuring before flashing. Home Wi-Fi credentials are entered in the dashboard and saved in NVS; passwords are never returned by the status API. Application flashing with erase disabled preserves these saved settings. The 5.1.3 build uses **1,136,001 bytes** of program storage and **122,336 bytes** of static RAM.
-
-Version **5.1.1** includes browser-rendered BMP previews. Its JavaScript module is embedded in firmware flash and served at `/preview.js`; build and OTA use the same commands and partition layout. No filesystem image, generated preview videos or additional libraries are required. The official `espota.py` completed the 5.1.1 update, and post-reboot status confirmed the version, home-Wi-Fi connection and all eight images. All three preview views passed live browser geometry checks without console errors.
-
-Keep **Hardware CDC and JTAG** selected: USB power handling uses the core's `HWCDC::isPlugged()` host detection, independently of whether a serial monitor is open. With a USB host detected, the firmware caps brightness at 16/255 and estimated LED current at 500 mA. A 4.45–5.50 V reading is then classified as USB supply rather than battery voltage. Installed 5.0.4 passed host detection, supply classification, output telemetry and live dashboard checks with the serial monitor closed. Visible LEDs and actual electrical current remain unmeasured; see [TESTING.md](TESTING.md).
-
-Equivalent CLI command on any supported host:
+Equivalent compile command on other supported hosts:
 
 ```sh
 arduino-cli compile --fqbn 'esp32:esp32:adafruit_qtpy_esp32s3_nopsram:PartitionScheme=default_8MB,USBMode=hwcdc,CDCOnBoot=cdc,EraseFlash=none' --output-dir .build/release code/POV4.1
 ```
 
-## First USB-C flash
+For Arduino IDE, install the pinned core/libraries, open `code/POV4.1/POV4.1.ino`, and select the board and Tools settings above. Keep the sketch's `.h` and `.cpp` files together.
 
-1. Connect the QT Py with a data-capable USB-C cable. The verified port after hardware CDC re-enumeration is **COM5**; recheck Device Manager if it changes.
-2. Build with your configuration, then run:
+## First USB flash
 
-   ```powershell
-   .\tools\build.ps1 -Port COM5
-   ```
+Connect a data-capable USB-C cable, identify the current serial port, and pass it to the build script. Replace the example port as needed:
 
-3. If the uploader cannot connect, hold **BOOT**, press/release **RESET**, release **BOOT**, then retry. Do not hold BOOT across an ordinary power cycle.
-4. After uploading, reset or power cycle. A serial monitor at 115200 baud prints firmware version, reset reason, filesystem, IMU, battery, brightness/current settings and network information. USB enumeration can miss the earliest messages; the dashboard also exposes live status.
-5. On a new configuration, join the open staff AP and open `http://192.168.4.1/`. If client mode is already saved, use its LAN address or `http://povstaff.local/`; flashing does not reset the Wi-Fi choice. Initialize storage explicitly only if the dashboard reports it unavailable, then upload sequences.
-
-The CLI writes the bootloader, partition table and application on the initial USB upload. It does not load a LittleFS image. Changing partition layouts may invalidate old storage; a storage reset erases sequences only and requires an explicit dashboard confirmation.
-
-## Arduino IDE
-
-Install the pinned ESP32 core and Adafruit libraries, then open `code/POV4.1/POV4.1.ino`. Choose the board and Tools options in the table above. Keep all `.h` and `.cpp` files beside the sketch. The `.ino` name remains historical; this is version 5 firmware. Use Verify/Upload normally. No internal library edits are required.
-
-## Subsequent browser OTA (including Android)
-
-1. Build the same target/partition scheme. Copy **POV4.1.ino.bin** to the phone if needed.
-2. Connect to the staff AP or its configured home LAN and open the dashboard.
-3. In Firmware Update, choose the application `.bin` and upload. The staff blanks its main LEDs during the transfer. The UI shows transfer progress, then validation/result.
-4. Only a completed, validated application update triggers reboot. Wait for the staff to return on its saved network, reconnect if necessary, and reload the page. Saved Wi-Fi settings take effect at this reboot too.
-
-The browser sends an exact-size binary stream; failed/truncated transfers do not finalize an OTA slot. Firmware must fit the inactive 3.19 MiB slot. ESP32's image checks are used; images are not cryptographically signed and automatic rollback of a valid-but-buggy application is not configured. Keep USB access available during development.
-
-## Subsequent Arduino OTA
-
-Connect the development computer to the same network as the staff (its AP also works). In Arduino IDE, choose the **povstaff network port**, build and Upload. No OTA password is required. mDNS and UDP 3232 must be allowed on the computer; Arduino OTA also uses a TCP transfer connection back to the uploader. If discovery is unavailable, the core's `tools/espota.py` can address the IP directly:
-
-```sh
-python espota.py -i 192.168.4.44 -p 3232 -f POV4.1.ino.bin
-# If the computer has multiple interfaces, specify its actual LAN IPv4 address:
-python espota.py -i 192.168.4.44 -p 3232 -I 192.168.1.50 -P 32320 -f POV4.1.ino.bin
+```powershell
+.\tools\build.ps1 -Port COM5
 ```
 
-Use the script shipped with the pinned ESP32 core. Application updates only are supported; Arduino filesystem OTA is rejected to protect sequence storage.
+If connection fails, hold BOOT, press/release RESET, release BOOT, then retry. The initial upload establishes the OTA partition layout. Keeping erase disabled preserves saved Wi-Fi settings; changing partition layouts may invalidate sequence storage.
 
-Use `192.168.4.1` for a direct AP connection instead of the staff LAN address. The example `192.168.1.50` is a placeholder for the development computer's own IPv4 address. Browser OTA has completed on the physical staff in both AP and client modes. The official `espota.py` script also completed a transfer under Python 3.12 with explicit `-I` host binding and `-P 32320`, returning exit code zero. Existing Windows firewall block rules prevented the standalone `espota.exe` callback; no firewall settings were changed. See [TESTING.md](TESTING.md) for reboot/version verification and remaining acceptance checks.
+On a fresh configuration, join the open **POVSTAFFxxxx** network and open [192.168.4.1](http://192.168.4.1/) or [povstaff.local](http://povstaff.local/). There is no login. If client mode was already saved, use the home LAN instead. Initialize storage under **Device → Maintenance & storage recovery** only if needed, then upload BMPs through the dashboard.
 
-## Audit of the original
+## Wireless updates
 
-The untouched source was built from a separate Git snapshot with core 3.3.11. It failed at link time with duplicate `RequestHandler` definitions from `detail/RequestHandlersImpl.h` and the old web file manager. The user explicitly authorized a breaking rewrite and a modern toolchain, so no obsolete-core compatibility work was pursued.
+**Browser:** build with the same board/partition settings, open Firmware Update in the dashboard, and upload `.build/release/POV4.1.ino.bin`. Main LEDs blank during transfer. A completed, validated update reboots onto the saved network. Do not upload merged, partition or bootloader binaries.
 
-Audited old dependencies: `pov-esp32` commit `1ad8792102be660162d818d145dd2aabe72272ce`, file manager commit `fd6e763f57b534396b8585b0a103212c1c3f889c`. The POV library set brightness to 127 in `begin()`, used blocking blink delays, and had unchecked image-list copies/null paths. None are used in version 5.
+**ArduinoOTA:** select the `povstaff` network port in Arduino IDE, or run the official `espota.py` from the pinned ESP32 core:
 
-References: [ESP32 Wi-Fi API](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/wifi.html), [ESP32 OTA](https://docs.espressif.com/projects/arduino-esp32/en/latest/ota_web_update.html), [LSM6DSO datasheet](https://www.st.com/resource/en/datasheet/lsm6dso.pdf).
+```sh
+python espota.py -i povstaff.local -p 3232 -f .build/release/POV4.1.ino.bin
+```
+
+Use `192.168.4.1` for a direct AP connection if mDNS is unavailable, or the staff's current LAN address in client mode. No password is required. Allow UDP 3232 and the TCP connection back to the uploader; `-I <computer-IPv4> -P 32320` selects the host interface and callback port when needed. Filesystem OTA is disabled. Application images must fit the inactive slot; signed images and automatic rollback are not configured.
+
+## Runtime defaults
+
+Normal brightness starts at **5/255** after a **3/255** startup battery indication. Battery operation caps brightness at 64/255, flashlight at 20/255 and estimated LED current at 1,800 mA. A detected USB host caps brightness at 16/255 and estimated LED current at 500 mA, excluding MCU/radio consumption. Hardware CDC detects the USB host without an open serial monitor. Battery voltage at/below 3.20 V blocks normal output; recovery requires 3.35 V. Current and battery percentage are estimates.
+
+Wi-Fi settings persist in NVS and apply at the next boot. Other dashboard controls reset on boot. Uploading images, updating firmware or formatting sequence storage does not erase saved Wi-Fi settings.

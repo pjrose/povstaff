@@ -1,4 +1,5 @@
 .. _build:
+
 **************************
 Build Guide
 **************************
@@ -19,6 +20,7 @@ Please follow the steps below to build your staff.
     build-switch
     build-led-finish
     build-battery
+    build-programming
     build-controller
     build-testing
     build-battery-assembly

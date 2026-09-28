@@ -1,44 +1,65 @@
 Basic usage
 ===========
-To **turn the staff on and off**, use the switch at one end of the staff. It is a
-3-position switch;  middle position is always OFF; one of the two other
-positions is ON.
 
-As soon as you have turned the staff on, it will show the battery voltage, by
-lighting part of the LED strips. The longer the strip, the higher the battery charge.
+Power and startup
+-----------------
 
-If you only see one or two LEDs light up, the battery charge is too low for
-use. You need to recharge the batteries as described in the next section.
+Use the three-position switch at one end of the staff. The middle position is
+OFF; one of the other positions is ON. Turn the staff off after use to avoid
+battery drain.
 
-After using the staff, **make sure to turn it off**! If left on, LEDs will
-drain the battery rather fast - even if you are not using the staff. To remind
-you to turn it off, the staff will be blinking  red LEDs once every 30 seconds
-while it is on and not being used.
+At startup the firmware sends black frames, checks supply voltage and briefly
+shows a dim battery meter when a battery reading is available. The startup meter
+uses brightness 3/255; normal operation starts at 5/255. At about 3.40 V, the
+meter lights roughly five pixels. Recharge a low battery as described in
+:doc:`usage-charging`.
 
+A detected USB host allows limited USB-powered operation without opening a
+serial monitor. The dashboard shows USB supply voltage instead of a battery
+percentage. USB brightness is capped at 16/255 and estimated LED current at
+500 mA. Battery operation retains low-voltage protection. The dashboard's
+voltage, percentage and current values are estimates.
 
-To **start the show**,  turn the staff ON and start spinning it.
-The staff will begin showing your first image, one line at a time,
-and will continue doing that as long as you are twirling the staff. It will
-adjust the interval between successive lines depending on the rotation speed,
-to keep the image ratio close to original regardless of how fast you are
-rotating the staff.
+Connect to the dashboard
+------------------------
 
-You can find a number of staff spinning tutorials on YouTube - just search for
-"staff spinning tutorials for beginners". I learned a lot from these two:
-https://www.youtube.com/watch?v=L0madJzk3Wc and
-https://www.youtube.com/watch?v=gm5D8TS3mNY.
+On a fresh configuration the staff creates an open network named
+``POVSTAFFxxxx``. Join it without a password and open http://192.168.4.1/ or
+http://povstaff.local/. The dashboard requires no login. On a phone, choose to
+stay connected when warned that the staff network has no Internet.
 
+To use a home network, open **Device**, then **Wi-Fi & connection**, choose
+**Home Wi-Fi · client**, enter its SSID and password, and save.
+**Power cycle to apply the change.** Saving does not interrupt the
+current connection. If the saved network is unavailable for about ten seconds,
+or is later lost, the staff starts its AP and stays there until the next boot.
+The same dashboard is available in either mode.
 
+.. figure:: images/dashboard-live.png
+   :alt: Staff dashboard with lighting and power controls
+   :width: 100%
 
-The staff will continue showing the image for the duration given in
-`imagelist.txt` file or until you pause the staff as described below, whatever
-comes first. If duration for a given image was not provided, the staff will
-continue showing this image until you pause.
+Modes and controls
+------------------
 
-To **pause** the show or move to the next image in the list, stop the staff
-**in vertical position**. It will go blank; as soon as you start spinning it
-again, it will resume the show, moving to the next image. After reaching the
-last image in the list, it will loop over, starting again with the first image.
+Auto uses motion and orientation: spinning selects POV, stationary horizontal
+selects LED Test, and stationary upright selects Walking Stick. Selecting a
+manual mode locks it; unlocking returns to Auto.
 
-After you are done, do not forget to **turn the staff OFF**, to avoid draining
-the batteries.
+* **POV:** plays uploaded BMPs one row at a time, synchronized to motion.
+* **Walking Stick:** each swing triggers a smooth pulse of the selected color;
+  the pulse fades to darkness over time.
+* **LED Test:** rainbow, pixel walk, channel test and gradient patterns.
+* **Sword, Flashlight and Solid:** procedural scenes controlled from the
+  dashboard, without requiring an image file. Breathing, Rainbow and Chase
+  are also available through the API.
+* **Battery:** a brief dim meter; **Idle/Off:** main strips dark.
+
+The dashboard controls brightness, color, lock, selected sequence and playlist
+duration. Files play in filename order; duration defaults to 15 seconds and
+zero holds the selected image. Prefix names with ``01-``, ``02-`` and so on to
+control order. See :doc:`usage-upload` for image requirements and previews.
+
+Runtime lighting controls reset on boot; Wi-Fi settings and uploaded files
+persist. Uploads and firmware updates temporarily blank the main LEDs. Use the
+physical switch to turn the staff fully off.

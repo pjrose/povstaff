@@ -1,91 +1,42 @@
 ###############################
 Persistence of Vision LED staff
 ###############################
+
+This guide covers the **Island Robotics V4.1 hardware** and this fork's
+**version 5 firmware** for the Adafruit QT Py ESP32-S3 with 8 MB flash.
+The original staff was designed by Alexander Kirillov, building on work by
+Phillip Burgess and Erin St Blaine at Adafruit.
+
 .. figure:: images/main-1.jpg
-    :alt: POV staff in action
-    :width: 90%
+   :alt: POV staff in action
+   :width: 90%
 
-This guide contains documentation for Persistence of Vision (POV) LED staff project,
-created by Alexander Kirillov <irobotics.store@gmail.com>.
+The 141 cm staff has two 50 cm illuminated ends around a central grip.
+Each end carries two 72-pixel strips, for 288 physical LEDs sharing 72 logical
+pixel positions. An LSM6DSO motion sensor synchronizes BMP playback to rotation.
+The hardware assembly and charging guides below describe the existing design.
 
-This document describes version 4.1, which was released on May 10, 2023.  An
-earlier version of this project was documented on
-`Instructables web site <https://www.instructables.com/Persistence-of-Vision-LED-Staff/>`__.
-The version described here contains several improvements compared to the earlier
-one, see below.
+Wireless controls
+*****************
 
-For those wishing to reproduce this project, we are offering a kit of parts for
-sale through our `Tindie store <https://www.tindie.com/stores/irobotics/>`__.
-However, all design files, software, BOM and more are published under open
-source license, so anyone can build their own version from scratch. You can
-find these files in the project GitHub repository: https://github.com/shurik179/povstaff
+The staff starts its own open Wi-Fi network by default. Connect and open
+http://192.168.4.1/ to upload BMP sequences, choose lighting modes, preview
+patterns and install firmware updates. Optional home Wi-Fi configuration takes
+effect after a power cycle. See :doc:`usage-basic` and :doc:`usage-upload`.
 
-Overview
-********
+.. figure:: images/dashboard-live.png
+   :alt: Live dashboard with Walking Stick selected and brightness 5
+   :width: 100%
 
-It is well known that even after a light has been turned off, human eye keeps
-"seeing" it for a fraction of second. This is known as Persistence of Vision, or
-POV, and it allows one to "paint" pictures by quickly moving a strip of LEDs,
-drawing one line of an image at a time in quick succession. If you search online
-(e.g. on Etsy), you can find quite a few toys based on this idea: pois, staffs, and more.
-
-However, these are expensive: typical prices for a POV staff of decent
-resolution start at $500, and they use proprietary software, so there is no easy
-way to modify their behavior or add extra functionality. Thus, when looking for
-a birthday gift for a friend who enjoys painting with light, I decided to create
-my own open source version using readily available components.
-
-My project builds upon the outstanding `work of Phillip Burgess and Erin St Blaine
-<https://learn.adafruit.com/pov-dotstar-double-staff>`__
-from Adafruit; however, I made a few changes, upgrading the electronics.
-
-
-Key Features
-************
-
-* It is a two-sided staff, of total length 141 cm (55in); it is not collapsible.
-  Each side of the staff has two 50cm/72 pixels LED strips, for the total of 288 LEDs.
-  Thus, you can use it to show images with 72-px resolution.
-
-* Staff is powered by two 18650 Li-Ion batteries, which should be enough for at
-  least 1 hr show, possibly as much as 2 hours, depending on intensity of your
-  images. The batteries can be recharged via 5.5mm/2.1 barrel connector (or USB
-  C cable, using included adapter); full charge time is about 5 hrs.
-
-* Images (in bitmap format) can be easily uploaded to the staff over WiFi. It has
-  enough memory for about 50 images. The order in which images are shown is
-  described in a separate plain text file, where you can put a list of
-  images and durations. An image can be listed there several times, or none at all.
-
-* The staff contains an Inertial Motion Unit (IMU) which can be used to detect
-  when the staff is in motion. The software uses it to adjust update frequency
-  for images, so the images will not appear stretched or compressed regardless
-  of how fast you are rotating it. You can also use it for controlling your
-  show: e.g. stopping the staff vertically is used as a signal to move to the
-  next image in the slideshow.
-
-* The software is based on Arduino IDE. It is available under an open source
-  license and is easy to modify to suit your needs.
-
-Differences from  version 3
-****************************
-
-* New MCU (ESP32-S3 QT Py)
-
-* Wireless uploading of images
-
-* Many changes to wiring
-
-* New 3d printed spacers and other components, printed in black resin.
-
-* Foam protectors at the ends of the staff, to protect the staff when dropped
-
-
+Normal brightness starts at 5/255. Walking Stick pulses with each swing and fades
+to darkness; Sword stays illuminated with motion accents. The browser can
+preview BMPs spinning at 80 RPM, as stationary animated LEDs, or as a full
+rotation exposure. Previewing does not change actual playback.
 
 .. toctree::
-    :caption: Table of Contents
-    :maxdepth: 2
+   :caption: Table of Contents
+   :maxdepth: 2
 
-    build
-    usage
-    license
+   build
+   usage
+   license

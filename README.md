@@ -1,82 +1,92 @@
-# POV Staff 5
+# POV Staff
 
-A new firmware for the **Island Robotics V4.1 staff / Adafruit QT Py ESP32-S3 with 8 MB flash**. It controls 72 logical DotStar pixels across four physical strips, with an LSM6DSO IMU, a local dashboard, and wireless updates. This is a breaking replacement of the original firmware.
+Wireless control for the **Island Robotics V4.1 staff**, running on an **Adafruit QT Py ESP32-S3 with 8 MB flash**. Upload light sequences, preview them in your browser, choose motion effects, and install firmware updates over Wi-Fi.
 
-Start with [BUILD.md](BUILD.md) for the first USB flash, [TESTING.md](TESTING.md) for verification, and [MIGRATION.md](MIGRATION.md) for differences from the original. The maintained sketch is `code/POV4.1/POV4.1.ino`.
+**Firmware 5.1.3** starts at brightness **5 / 255**. The staff has two illuminated ends, each with 72 pixels on front and back strips, and an unlit center grip.
 
-## Connect and load sequences
+![Live dashboard showing Walking Stick mode and brightness 5](docs/images/dashboard-live.png)
 
-1. Power on. By default the staff creates **POVSTAFFxxxx**; the suffix identifies the board.
-2. Join this **open Wi-Fi network**, with no password. On Android, choose to stay connected even though this network has no Internet.
-3. Open **http://192.168.4.1/** or **http://povstaff.local/**. The dashboard opens without a login.
-4. If storage is uninitialized, explicitly initialize it in Settings. Mount failures never silently erase files.
-5. Upload BMP sequences in the dashboard. Each must be **72 pixels wide, uncompressed 24-bit RGB, at most 296 rows**. Uploading multiple files queues them individually. The dashboard reports rejected files and progress.
-6. Select POV mode and spin, or choose a procedural lighting mode. All valid uploaded images join the alphabetically ordered playlist. Set duration to zero to hold the selected image. Prefix names with `01-`, `02-`, etc. to control order.
+## Connect
 
-`imagelist.txt` is no longer used. No filesystem flashing tool or separate uploader mode is needed. The two sample BMPs in `images/` can be uploaded directly.
+1. Power on the staff and join its open **POVSTAFFxxxx** Wi-Fi network. The suffix identifies your board. If your phone warns that this network has no Internet, stay connected.
+2. Open [192.168.4.1](http://192.168.4.1/) or [povstaff.local](http://povstaff.local/). No dashboard login is required.
+3. Choose a mode in **Live**, or open **Sequences** to upload BMPs.
 
-Installed release **5.1.3** includes sequence previews in the dashboard. Preview a file as a spinning staff with an 85 ms light trail, stationary animated LEDs, or a full-rotation long exposure. Play/pause and frame scrubbing let you inspect individual rows. Speed defaults to **80 RPM** (750 ms per BMP cycle), adjustable from 20 to 200 RPM. Choosing a preview does not change the real staff's selected sequence or lighting mode.
+For home Wi-Fi, open **Device → Wi-Fi & connection**, choose **Home Wi-Fi · client**, enter your network details, and save. **Power cycle to apply the change.** Saving does not interrupt your current session. On your home network, use `povstaff.local` or the address assigned by your router.
 
-The preview follows the documented assembly: two identical **72-pixel, 50 cm arms** separated by a **41 cm unlit central grip**, with pixel 0 at each inner end and pixel 71 at each tip. It approximates a centered staff playing one BMP per turn; it is not a calibrated prediction of its physical appearance. [See the live sequence preview](docs/images/sequence-preview.png).
+If the configured network cannot be reached within ten seconds, or the connection is lost, the staff opens its own network. It stays in that fallback mode until the next boot. Select **Open staff hotspot · default** and save if you want it to start as a hotspot again.
 
-The browser fetches each uncached BMP once and animates it locally, retaining up to 12 decoded images in memory. No generated videos or preview assets are stored in LittleFS. This keeps preview storage overhead off the staff and avoids repeated network traffic during animation. Version 5.1.3 is installed on the home network with all eight images retained.
+The hotspot and Arduino OTA have no password. Anyone connected to the staff's network can control it or install firmware. Home Wi-Fi credentials are stored on the device and are never returned by the dashboard.
 
-To use home Wi-Fi, select **Client** in Settings, enter the SSID/password, save, then **power cycle**. Saving never changes the current connection. Client mode has a ten-second connection window, then enables the staff AP if unsuccessful. Losing the home network also enables the AP. Fallback stops client scans and stays in AP mode until the next boot, when the saved client choice is retried. The same dashboard, uploads and OTA are available on either connection. Client mode remains an explicit saved choice; factory default is always AP.
+## Upload and play sequences
 
-Version 5.1.1 retains USB-powered lighting introduced in 5.0.4 and password-free networking introduced in 5.0.3. The staff AP has no password, the dashboard has no login, and ArduinoOTA needs no password. Home Wi-Fi credentials remain saved privately in NVS. Anyone connected to the staff AP or able to reach it on the home LAN can control it and upload files or firmware.
+![Sequence library with preview, selection, and wireless upload controls](docs/images/dashboard-library.png)
 
-The current bench setup uses saved home Wi-Fi; open **http://povstaff.local/** or **http://192.168.4.44/** while on that LAN. The numerical address can change with DHCP. See [TESTING.md](TESTING.md) for completed hardware checks and the remaining electrical and lighting checks.
+In **Sequences**, choose one or more BMP files and click **Upload to staff**. Files are stored in LittleFS; no filesystem image or separate file-transfer program is needed. Uploading the same filename replaces that sequence. Uploads briefly pause the main LEDs.
+
+| Requirement | Value |
+| --- | --- |
+| Image format | Uncompressed 24-bit BMP |
+| Width | Exactly 72 pixels |
+| Height | 1–296 rows |
+| Filename | Letters, numbers, hyphens and underscores; up to 44 characters before `.bmp` |
+| Library | Up to 50 sequences, subject to available space |
+
+The files in [images/](images/) include two ready-to-upload BMP examples. Each image row becomes one LED frame, played from the visual top of the image to the bottom.
+
+Click **Select** beside a file, then **Play POV**, and spin the staff. **Seconds per sequence** controls how long each image plays before advancing through the library in filename order. Set it to **0** to hold the selected image. Names such as `01-stars.bmp` and `02-rings.bmp` set a predictable order. **Rescan** refreshes the library; **Delete** removes a sequence.
+
+Files survive power cycles and application firmware updates. If storage is unavailable, the dashboard offers explicit initialization under **Maintenance & storage recovery**; it never automatically erases your files.
+
+## Preview before you spin
+
+![Full-rotation BMP preview at 80 RPM](docs/images/sequence-preview.png)
+
+Click **Preview** beside any file. Choose **Spinning** for a short light trail, **Stationary** for animated LEDs without rotation, or **Full rotation** for a long-exposure view. Speed defaults to **80 RPM**, equivalent to one BMP cycle every **750 ms**, and can be adjusted from 20 to 200 RPM. Pause or scrub through individual frames.
+
+Previewing a file does not change the staff's selected sequence or mode. The browser caches up to 12 decoded BMPs and renders them locally, without adding preview files to staff storage.
+
+The visualization models two identical 50 cm LED arms around a 41 cm dark grip, with pixel 0 nearest the grip and pixel 71 at each tip. It assumes one complete BMP per revolution. Physical brightness and perceived persistence will differ from the screen.
 
 ## Lighting modes
 
-| Mode | Behavior |
+| Dashboard mode | What it does |
 | --- | --- |
-| Auto | Debounced motion selects POV; stationary horizontal selects LED Test; stationary upright selects Walking Stick. |
-| POV | Motion-synchronized BMP playback with bounded phase advancement. |
-| LED Test | Smooth rainbow, R/G/B/white pixel walk, fading channel test, or gradient fade. |
-| Walking Stick | Each swing lights the selected color, then fades smoothly to darkness. Slow down between swings to retrigger. |
-| Sword | Selectable blade color with shimmer and motion accents. |
-| Flashlight | Warm-neutral white with a separate brightness cap and the shared current limit. |
-| Solid / Breathing | Color picker controls steady or breathing light. |
-| Rainbow / Chase | Procedural animations without an image file. |
-| Battery | Brief, dim voltage-based state-of-charge meter. |
-| Idle / Off | Both keep main strips dark, Wi-Fi and the onboard heartbeat active. Idle is also Auto's resting state; choosing either manually locks it. |
+| **Auto** | Motion selects POV. When still, horizontal selects LED Test, upright selects Walking Stick, and other orientations settle into Idle. |
+| **POV playback** | Plays BMP frames in time with measured rotation. Stops showing frames when the staff is still. |
+| **Walking stick** | Each swing lights your selected color, then fades to black over about 0.8 seconds. |
+| **Sword** | Keeps your chosen color illuminated, with shimmer and brighter accents during fast movement. |
+| **Solid color** | Steady light in your chosen color. |
+| **LED test** | Runs the selected diagnostic or animation: rainbow, pixel walk, RGB channel fades, gradient, breathing, or chase. |
+| **Flashlight** | Warm white light with a separate brightness cap. |
+| **Idle / Lights off** | Both leave the main strips dark while Wi-Fi and the onboard heartbeat remain active. Idle is also Auto's resting state. |
 
-Selecting a manual mode locks it. Unlocking returns to Auto. Color, requested/applied brightness, battery, IMU, Wi-Fi, heap, storage, and estimated current are visible on the dashboard. Procedural scenes target 100 updates/second. Uploads and firmware updates deliberately blank the main LEDs until the operation ends.
+Selecting a mode locks it. Turn off **Lock mode** to return to Auto. **Show on staff** briefly displays the estimated battery charge when operating from a battery.
 
-Walking Stick in 5.1.2 detects a swing above 45 degrees/second, brightens over 40 ms, and fades over 800 ms. Slowing below 18 degrees/second rearms the next swing. Continuous spinning produces one pulse until you slow down; choose POV for continuous spinning imagery. After entering Walking Stick, briefly rest the staff to arm it. The selected color repeats on both ends, with a subtle increase toward the tips. IMU loss leaves this mode dark.
+For Walking Stick, briefly hold the staff still before the first swing. A swing above 45 degrees/second triggers a 40 ms rise followed by an 800 ms fade. Slowing below 18 degrees/second rearms the next pulse. Continuous rotation produces one pulse until you slow down; use POV for continuous spinning imagery. The color picker controls Walking Stick, Sword, Solid, Breathing, and Chase.
 
-Startup takes control of DATA/CLK, sends black twice, averages supply samples, and briefly shows a dim meter when a battery reading is available before enabling normal output. At 3.40 V the meter fills approximately five of 72 pixels. Low/invalid voltage blocks normal light output. Battery-operation defaults are brightness 5/255, maximum 64/255, flashlight cap 20/255, and an estimated total LED-current budget of 1,800 mA. These are conservative starting settings in `Config.h`, **not measured electrical guarantees**.
+## Brightness and power
 
-Version 5.0.4 distinguishes a USB supply from a battery reading. A positively detected USB host and a measured supply of 4.45–5.50 V select USB power instead of treating the reading as an invalid battery. The dashboard shows supply voltage without inventing a battery percentage. Whenever a USB host is detected, brightness is capped at **16/255** and estimated LED current at **500 mA**, even if the voltage is in the battery range. Detection works without an open serial monitor. Battery operation retains its 3.20 V cutoff and 3.35 V recovery threshold; readings outside the supported battery/USB ranges keep the main LEDs black. Installed 5.0.4 correctly reported USB power and nonzero, capped output during bench tests with the serial monitor closed. Visible LED operation and actual electrical current still need physical measurement/observation; see [TESTING.md](TESTING.md).
+Every boot starts at **5 / 255 brightness** to reduce startup load. The brief startup battery display uses **3 / 255**. You can increase brightness during use; mode, color, brightness, and playlist timing reset at reboot. Wi-Fi configuration and uploaded sequences persist.
 
-## Development
+On battery, the configured brightness maximum is 64 / 255, Flashlight is capped at 20 / 255, and the estimated LED-current budget is 1,800 mA. A detected USB host limits brightness to 16 / 255 and estimated LED current to 500 mA. A supported USB supply is displayed as **USB POWER**, with supply voltage instead of a battery percentage.
 
-The new implementation uses the supported ESP32 Arduino Wi-Fi, WebServer, LittleFS, Preferences, Update and ArduinoOTA APIs, plus Adafruit DotStar/NeoPixel. It removes `pov-esp32`, `ESPxWebFlMgr`, and direct inclusion of internal HTTP headers. Rendering, pattern definitions, sequence storage and networking are separate modules. See [API.md](API.md) for automation endpoints.
+Battery cutoff is 3.20 V, with recovery at 3.35 V. Low or unsupported voltage readings hold the main strips off. Voltage, charge percentage, and LED current are estimates; firmware limits do not establish the measured electrical capability of the assembled staff.
 
-## Original project
+## Firmware updates and development
 
-This repository contains all files related to Persistence of Vision (POV) staff project. A detailed write-up of Version 1 of this project is available on  Instructables at [https://www.instructables.com/Persistence-of-Vision-LED-Staff/](https://www.instructables.com/Persistence-of-Vision-LED-Staff/); you can also find there photos  of the staff in action.
+See [Build and flash](BUILD.md) for the pinned toolchain, first USB installation, browser updates, and Arduino OTA. Upload only the application **POV4.1.ino.bin** in **Device → Firmware update**. Keep the staff powered until it returns after reboot. Application updates preserve sequences and Wi-Fi settings.
 
-The original hardware/firmware version 4.1 is documented at
-https://povstaff.readthedocs.io
+See [API.md](API.md) for local automation endpoints and [code/README.md](code/README.md) for the source layout. The maintained sketch is [code/POV4.1/POV4.1.ino](code/POV4.1/POV4.1.ino).
 
+| Directory | Contents |
+| --- | --- |
+| `code/POV4.1/` | Firmware, embedded dashboard, and preview renderer |
+| `docs/` | Hardware assembly and operating guides, plus dashboard screenshots |
+| `hardware/` | PCB designs and mechanical models |
+| `images/` | Sample BMP sequences |
+| `tests/`, `tools/` | Host checks and build helpers |
 
+## Credits and license
 
-
-
-## Structure of this repository  
-This repository is organized as follows:
-
-* `docs`: documentation
-* `code`: this directory contains the source code for the staff software
-* `hardware`:  design files for the custom PCBs used in
-  the project, as well as STEP files for the 3d printed components.
-* `images`: sample image(s) and  `imagelist.txt` file
-
-
-## Authors and license
-This project was created by Alexander Kirillov <irobotics.store@gmail.com>; it is
-based on [earlier work](https://learn.adafruit.com/pov-dotstar-double-staff) of
-Phillip Burgess and Erin St Blaine from Adafruit. The project is available under
-MIT license; see LICENSE file for details.
+Original project by Alexander Kirillov, based on work by Phillip Burgess and Erin St Blaine at Adafruit. Hardware assembly documentation remains in [docs/](docs/). This fork replaces the original firmware with the version 5 implementation. Licensed under [MIT](LICENSE).
