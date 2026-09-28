@@ -40,6 +40,7 @@ vm.runInContext(script,context);
 const evaluate=expression=>vm.runInContext(expression,context);
 
 async function main(){
+  assert.equal(requests.length,0,'Loading dashboard must not switch the physical renderer');
   evaluate(`renderStatus({version:'5.0.0',uptime:3661,heap:65536,engine:{mode:'walking_stick',requestedMode:'walking_stick',locked:true,batteryPercent:7,batteryVoltage:3.4,critical:false,brightness:24,appliedBrightness:20,maxBrightness:64,currentMa:1000,powerScale:.8,imu:true,orientation:'vertical',speed:42.2,color:'#aa3311',pattern:'rainbow'},network:{mode:'ap',savedMode:'ap',ssid:'POVSTAFF',ip:'192.168.4.1'},storage:{mounted:true,count:0,used:4096,total:100000}})`);
   assert.equal(elements.get('activeMode').textContent,'Walking stick');
   assert.equal(elements.get('batteryPercent').textContent,'7');
@@ -51,6 +52,14 @@ async function main(){
   assert.equal(elements.get('modeLock').checked,true);
   assert.equal(elements.get('wifiPassword').value,'');
   assert.equal(modes.find(e=>e.dataset.mode==='walking_stick').attributes['aria-pressed'],'true');
+  assert.equal(elements.get('rendererBaseline').attributes['aria-pressed'],'true');
+  evaluate(`renderStatus({...lastState,engine:{...lastState.engine,renderer:'dither',renderStats:{actualFPS:812.4,sendMeanUs:170.25,sendMaxUs:280,lateFrames:19,targetFPS:1000,frames:8124}}})`);
+  assert.equal(elements.get('rendererDither').attributes['aria-pressed'],'true');assert.equal(elements.get('rendererBaseline').attributes['aria-pressed'],'false');
+  assert.equal(elements.get('rendererFPS').textContent,'812.4 Hz');assert.equal(elements.get('rendererMean').textContent,'170.3 µs');assert.equal(elements.get('rendererMax').textContent,'280 µs');assert.equal(elements.get('rendererLate').textContent,'19');
+  const beforeRenderer=requests.length;await elements.get('rendererDither').listeners.click();
+  const rendererWrites=requests.slice(beforeRenderer).filter(r=>r.options.method==='POST');assert.equal(rendererWrites.length,1);assert.equal(rendererWrites[0].path,'/api/renderer');assert.equal(rendererWrites[0].options.body.toString(),'name=dither');assert.equal(rendererWrites[0].options.headers['X-POV-Request'],'1');
+  const beforeBreathing=requests.length;await elements.get('rendererBreathing').listeners.click();
+  assert.deepEqual(requests.slice(beforeBreathing).filter(r=>r.options.method==='POST').map(r=>[r.path,r.options.body.toString()]),[['/api/pattern','name=breathing'],['/api/mode','name=led_test']],'Breathing test changes only pattern and mode');
   evaluate(`renderStatus({...lastState,engine:{...lastState.engine,powerSource:'usb',externalPower:true,usbHostPresent:true,supplyVoltage:4.71,batteryVoltage:null,batteryPercent:null,critical:false,appliedBrightness:.007}})`);
   assert.equal(elements.get('powerSourceLabel').textContent,'USB power');
   assert.equal(elements.get('batteryPercent').textContent,'USB','USB supply must not display a false charge percentage');

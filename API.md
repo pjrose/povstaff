@@ -10,6 +10,7 @@ Successful mutations return `{"ok":true}`. Errors return `{"ok":false,"error":".
 | GET | `/api/files` | `files[]` (`index`, `name`, `bytes`, `width`, `height`, `active`), current selection, duration, count, error, catalogue `revision` |
 | GET | `/api/files/content?name=example.bmp` | Raw validated BMP bytes for one allowed basename |
 | GET | `/preview.js` | Browser preview module served from firmware flash |
+| POST | `/api/renderer` | `name`: `baseline` or `dither`; switches actual LED output, resets timing counters; defaults to baseline at boot |
 | POST | `/api/mode` | `name`: `auto`, `pov`, `led_test`, `idle`, `walking_stick`, `sword`, `flashlight`, `solid`, `breathing`, `rainbow`, `chase`, `battery`, `off` |
 | POST | `/api/pattern` | `name`: registered pattern, including `rainbow`, `pixel_walk`, `channels`, `fade`, `breathing`, `chase`; affects LED Test |
 | POST | `/api/brightness` | `value`: integer 0–64 by default, bounded by `Config::MAX_BRIGHTNESS` |
@@ -26,6 +27,12 @@ Successful mutations return `{"ok":true}`. Errors return `{"ok":false,"error":".
 | POST | `/api/storage/format` | `confirm=ERASE`; permanently clears sequence storage only |
 | POST | `/api/ota` | Raw application `.bin`; headers below. Validated success schedules reboot. |
 | POST | `/api/reboot` | Responds, then reboots; saved Wi-Fi settings apply |
+
+## Renderer measurements
+
+`engine.renderer` is `baseline` or `dither`. `engine.renderStats` contains `actualFPS` (last approximately one-second output window), `sendMeanUs` and `sendMaxUs` (SPI call duration), `frames` (measured packets), `lateFrames` (missed one-millisecond intervals in B), and `targetFPS` (100 for A procedural scenes, 1000 for B output). POV scene cadence depends on motion and image height. These are firmware measurements, not optical measurements. Blackout writes are excluded from transfer counters.
+
+Counters reset on every successful `/api/renderer` request. Renderer choice is runtime-only and preserves requested mode, brightness and color. B caches fractional scene values and quantizes each packet within the current budget; it does not interpolate motion or increase sensor sampling speed.
 
 ## Sequence preview reads
 

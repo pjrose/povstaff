@@ -4,6 +4,37 @@
 
 // Hardware-independent safety math, shared by firmware and host tests.
 namespace EngineMath {
+template<unsigned Count> class TemporalDither {
+  float residual[Count]={};
+  unsigned cursor=0;
+public:
+  void reset() {for(float& value:residual)value=0;cursor=0;}
+  uint32_t quantize(const float* target,uint8_t* bytes,uint32_t budget) {
+    uint32_t used=0;
+    bool extra[Count]={};
+    for(unsigned j=0;j<Count;++j) {
+      const unsigned i=(cursor+j)%Count;
+      if(!isfinite(target[i]) || target[i]<=0) {bytes[i]=0;residual[i]=0;continue;}
+      const float value=target[i]>255?255:target[i];
+      unsigned base=unsigned(value);
+      const float fraction=value-base+residual[i];
+      extra[i]=fraction>=1 && base<255;
+      residual[i]=fraction-(extra[i]?1:0);
+      if(base>budget-used) {base=budget-used;extra[i]=false;residual[i]=0;}
+      bytes[i]=uint8_t(base);used+=base;
+    }
+    // Preserve every base code before spending spare current on rounding up.
+    // Deferred rounding debt stays below one code; black/reset discards it.
+    for(unsigned j=0;j<Count;++j) {
+      const unsigned i=(cursor+j)%Count;
+      if(!extra[i])continue;
+      if(used<budget) {++bytes[i];++used;}
+      else residual[i]=0.999999f;
+    }
+    cursor=(cursor+1)%Count;
+    return used;
+  }
+};
 enum class PowerSource { Invalid, Battery, USB };
 inline PowerSource classifySupply(float volts, bool usbPresent, float batteryMax=4.30f,
                                  float usbMin=4.45f, float usbMax=5.50f) {

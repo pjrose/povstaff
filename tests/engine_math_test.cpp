@@ -5,6 +5,34 @@
 #include <math.h>
 int main() {
   using namespace EngineMath;
+  TemporalDither<3> dither;
+  float target[3]={0.25f,0.5f,0.75f};uint8_t bytes[3];unsigned sums[3]={};
+  for(unsigned i=0;i<100;++i) {
+    dither.quantize(target,bytes,765);
+    for(unsigned c=0;c<3;++c)sums[c]+=bytes[c];
+  }
+  assert(sums[0]==25 && sums[1]==50 && sums[2]==75); // preserves sub-code average energy
+  target[0]=target[1]=target[2]=0;
+  for(unsigned i=0;i<10;++i) {assert(dither.quantize(target,bytes,765)==0);for(auto b:bytes)assert(b==0);}
+  target[0]=target[1]=target[2]=0.75f;dither.quantize(target,bytes,765);
+  dither.reset();target[0]=target[1]=target[2]=0.25f;
+  assert(dither.quantize(target,bytes,765)==0); // no residual energy survives reset
+  target[0]=target[1]=target[2]=20.75f;
+  for(unsigned i=0;i<1000;++i)assert(dither.quantize(target,bytes,30)<=30); // each packet respects budget
+  target[0]=target[1]=target[2]=0;assert(dither.quantize(target,bytes,30)==0); // no cap-induced backlog
+  dither.reset();target[0]=target[1]=target[2]=3.5f;
+  for(unsigned i=0;i<100;++i) {
+    assert(dither.quantize(target,bytes,10)<=10);
+    for(auto b:bytes)assert(b>=3); // synchronized rounding cannot darken later pixels
+  }
+  TemporalDither<216> usbDither;
+  float usbTarget[216];uint8_t usbBytes[216];
+  for(float& channel:usbTarget)channel=3.2f;
+  const unsigned usbChannelBudget=unsigned((500-288)*255/80.0f);
+  for(unsigned i=0;i<1000;++i) {
+    const unsigned sum=usbDither.quantize(usbTarget,usbBytes,usbChannelBudget);
+    assert(288+sum*80.0f/255<=500);
+  }
   const float volts[]={3.2f,3.4f,3.7f,4.0f,4.2f};
   const float pct[]={0,7,40,88,100};
   for(unsigned i=0;i<5;++i)assert(fabsf(stateOfCharge(volts[i])-pct[i])<0.01f);

@@ -2,7 +2,7 @@
 
 Wireless control for the **Island Robotics V4.1 staff**, running on an **Adafruit QT Py ESP32-S3 with 8 MB flash**. Upload light sequences, preview them in your browser, choose motion effects, and install firmware updates over Wi-Fi.
 
-**Firmware 5.1.3** starts at brightness **5 / 255**. The staff has two illuminated ends, each with 72 pixels on front and back strips, and an unlit center grip.
+**Firmware 5.1.4** starts at brightness **5 / 255**. The staff has two illuminated ends, each with 72 pixels on front and back strips, and an unlit center grip.
 
 ![Live dashboard showing Walking Stick mode and brightness 5](docs/images/dashboard-live.png)
 
@@ -64,6 +64,16 @@ The visualization models two identical 50 cm LED arms around a 41 cm dark grip, 
 Selecting a mode locks it. Turn off **Lock mode** to return to Auto. **Show on staff** briefly displays the estimated battery charge when operating from a battery.
 
 For Walking Stick, briefly hold the staff still before the first swing. A swing above 45 degrees/second triggers a 40 ms rise followed by an 800 ms fade. Slowing below 18 degrees/second rearms the next pulse. Continuous rotation produces one pulse until you slow down; use POV for continuous spinning imagery. The color picker controls Walking Stick, Sword, Solid, Breathing, and Chase.
+
+## Compare rendering on the staff
+
+Open **A/B** in the dashboard and click **Run breathing test**. Watch the actual LEDs while switching between **A · Current** and **B · Dithered**. Both retain your brightness and color; try brightness 5 and a mixed color to compare the dim end of each fade.
+
+A uses the original downward channel rounding. Experimental B retains fractional channel levels and alternates adjacent output values over time, with a packed SPI transfer and a 1,000 Hz refresh target. Animation scenes still update at about 100 Hz; POV scenes follow rotation. The dashboard shows measured output frequency, SPI transfer time, and missed target intervals. Network work can reduce the achieved rate, and motion may make dithering grain visible.
+
+Switching is immediate and resets the timing counters. Current limits remain active on every output packet. Renderer selection lasts until reboot; every boot returns to A and brightness 5.
+
+![Actual staff dashboard with hardware A/B rendering controls](docs/images/render-ab.png)
 
 ## Brightness and power
 

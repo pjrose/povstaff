@@ -8,6 +8,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
 #include <HWCDC.h>
+#include <SPI.h>
 #include <math.h>
 
 namespace {
@@ -50,10 +51,48 @@ float powerScale=1, currentMa=LED_BASE_MA, appliedBrightness=0;
 float angle=0;
 uint32_t povLine=0, povRevision=0, lastAngle=0;
 const char* orientation="unknown";
+bool ditherRenderer=false,targetReady=false;
+float targetChannels[Config::PIXELS*3]={};
+EngineMath::TemporalDither<Config::PIXELS*3> quantizer;
+uint32_t channelBudget=0,lastDither=0;
+uint32_t statsFrames=0,statsMaxUs=0,statsLate=0,fpsFrames=0,fpsAt=0;
+uint64_t statsSendUs=0;
+float actualFPS=0;
+
+void recordSend(uint32_t start) {
+  const uint32_t duration=micros()-start;
+  ++statsFrames;++fpsFrames;statsSendUs+=duration;
+  if(duration>statsMaxUs)statsMaxUs=duration;
+}
+void updateFPS(uint32_t now) {
+  const uint32_t elapsed=now-fpsAt;
+  if(elapsed>=1000000) {actualFPS=fpsFrames*1000000.0f/elapsed;fpsAt=now;fpsFrames=0;}
+}
+void sendDither(uint32_t now) {
+  if(!ditherRenderer || !targetReady || uint32_t(now-lastDither)<1000)return;
+  const uint32_t elapsed=now-lastDither;
+  if(lastDither && elapsed>=2000)statsLate+=elapsed/1000-1;
+  lastDither=now;
+  uint8_t channels[Config::PIXELS*3];
+  const uint32_t sum=quantizer.quantize(targetChannels,channels,channelBudget);
+  uint8_t packet[4+Config::PIXELS*4+(Config::PIXELS+15)/16]={};
+  for(unsigned i=0;i<Config::PIXELS;++i) {
+    packet[4+i*4]=0xff;packet[5+i*4]=channels[i*3+2];
+    packet[6+i*4]=channels[i*3+1];packet[7+i*4]=channels[i*3];
+  }
+  for(unsigned i=4+Config::PIXELS*4;i<sizeof(packet);++i)packet[i]=0xff;
+  const uint32_t start=micros();
+  SPI.beginTransaction(SPISettings(8000000,MSBFIRST,SPI_MODE0));
+  SPI.writeBytes(packet,sizeof(packet));
+  SPI.endTransaction();
+  recordSend(start);
+  currentMa=LED_BASE_MA+sum*(LED_CHANNEL_MA*Config::STRIPS/255);
+}
 
 float wave(float phase) { return 0.5f+0.5f*sinf(phase*2*PI_F); }
 void clearFrame() { for(auto& c:frame)c={0,0,0}; }
 void black() {
+  targetReady=false;quantizer.reset();lastDither=0;
   strip.clear(); strip.show(); currentMa=LED_BASE_MA; appliedBrightness=0;
   forceFrame=true;
 }
@@ -74,6 +113,16 @@ void output(uint8_t cap,uint32_t nowUs) {
   powerScale=EngineMath::limiter(demand,budget-LED_BASE_MA,powerScale,float(uint32_t(nowUs-lastOutput))*0.000001f);
   lastOutput=nowUs;
   const float scale=user*powerScale*255;
+  if(ditherRenderer) {
+    for(unsigned i=0;i<Config::PIXELS;++i) {
+      targetChannels[i*3]=frame[i].r*scale;
+      targetChannels[i*3+1]=frame[i].g*scale;
+      targetChannels[i*3+2]=frame[i].b*scale;
+    }
+    channelBudget=uint32_t((budget-LED_BASE_MA)*255/(LED_CHANNEL_MA*Config::STRIPS));
+    targetReady=true;appliedBrightness=total>0?cap*powerScale:0;forceFrame=false;
+    sendDither(micros());return;
+  }
   uint32_t actualSum=0;
   for(unsigned i=0;i<Config::PIXELS;++i) {
     // Quantize only once, downward, so rounding cannot exceed the budget.
@@ -82,7 +131,7 @@ void output(uint8_t cap,uint32_t nowUs) {
   }
   currentMa=LED_BASE_MA+actualSum*(LED_CHANNEL_MA*Config::STRIPS/255);
   appliedBrightness=total>0?cap*powerScale:0;
-  strip.show(); forceFrame=false;
+  const uint32_t sendStart=micros();strip.show();recordSend(sendStart);forceFrame=false;
 }
 void batteryFrame() {
   clearFrame();
@@ -235,6 +284,7 @@ void begin() {
 }
 void update() {
   uint32_t now=millis(),nowUs=micros();
+  updateFPS(nowUs);
   if(uint32_t(now-lastUSBCheck)>=20) {
     lastUSBCheck=now;
     // isPlugged checks host SOF traffic, unlike CDC-open/DTR state. A short
@@ -255,6 +305,7 @@ void update() {
     black();bootStage=1;sampleTime=now;return;
   }
   sampleBattery(now);
+  if(!critical && Sequences::mounted())sendDither(micros());
   if(bootStage==1) {
     if(sampling)return;
     Serial.printf("IMU %s; startup auto; brightness %u, cap %u, current budget %.0f mA\n",imuOK?"connected":"absent",brightness,Config::MAX_BRIGHTNESS,Config::MAX_LED_CURRENT_MA);
@@ -309,6 +360,12 @@ void setLocked(bool value) {
 }
 void setBrightness(uint8_t value) {brightness=value>Config::MAX_BRIGHTNESS?Config::MAX_BRIGHTNESS:value;forceFrame=true;}
 void setColor(uint32_t value) {color=value&0xffffff;forceFrame=true;}
+bool setRenderer(const String& name) {
+  if(name!="baseline" && name!="dither")return false;
+  black();ditherRenderer=name=="dither";
+  statsFrames=statsMaxUs=statsLate=fpsFrames=0;statsSendUs=0;actualFPS=0;fpsAt=micros();
+  forceFrame=true;return true;
+}
 void showBattery() {batteryOverlay=true;meterTime=millis();forceFrame=true;}
 String statusJSON() {
   char json[1536],voltageJSON[24],percentJSON[24];
@@ -328,6 +385,12 @@ String statusJSON() {
     batteryV,isExternal?"usb":isBattery?"battery":"invalid",isExternal?"true":"false",usbPresent?"true":"false",
     usbLimited?Config::USB_LED_CURRENT_MA:Config::MAX_LED_CURRENT_MA,usbLimited?Config::USB_MAX_BRIGHTNESS:Config::MAX_BRIGHTNESS);
   result+=supply;
+  result.remove(result.length()-1);
+  char renderer[240];
+  snprintf(renderer,sizeof(renderer),",\"renderer\":\"%s\",\"renderStats\":{\"actualFPS\":%.1f,\"sendMeanUs\":%.1f,\"sendMaxUs\":%lu,\"lateFrames\":%lu,\"targetFPS\":%u,\"frames\":%lu}}",
+    ditherRenderer?"dither":"baseline",actualFPS,statsFrames?float(statsSendUs)/statsFrames:0,
+    (unsigned long)statsMaxUs,(unsigned long)statsLate,ditherRenderer?1000:100,(unsigned long)statsFrames);
+  result+=renderer;
   return result;
 }
 }
