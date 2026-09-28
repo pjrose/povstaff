@@ -5,12 +5,12 @@
 // Home Wi-Fi credentials/mode are saved through the dashboard and read
 // ONLY at boot. The home Wi-Fi password is never included in status JSON.
 namespace Config {
-constexpr char VERSION[] = "5.1.2";
+constexpr char VERSION[] = "5.1.3";
 constexpr char HOSTNAME[] = "povstaff";
 constexpr uint16_t PIXELS = 72;
 constexpr uint8_t STRIPS = 4;
 constexpr uint8_t VSENSE_PIN = 9;
-constexpr uint8_t DEFAULT_BRIGHTNESS = 24;
+constexpr uint8_t DEFAULT_BRIGHTNESS = 5;
 constexpr uint8_t STARTUP_BRIGHTNESS = 3;
 constexpr uint8_t MAX_BRIGHTNESS = 64;
 constexpr uint8_t FLASHLIGHT_MAX_BRIGHTNESS = 20;

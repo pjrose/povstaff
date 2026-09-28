@@ -45,9 +45,15 @@ These observations come from the connected physical staff, separate from the sim
 - [x] Valid BMP upload and replacement completed. Malformed images were rejected, and an aborted replacement recovered without destroying the existing file. The original eight images were preserved.
 - [x] The official `espota.py` uploader completed firmware transfer with Python 3.12 and explicit host binding; the staff rebooted and reported the installed version. The standalone `espota.exe` path was blocked by existing Windows firewall rules; no firewall settings were changed.
 
-The installed release is **5.1.2**, using **1,136,001 bytes** of program storage and **122,336 bytes** of static RAM. Earlier versions remain identified above to preserve the history of completed hardware checks.
+The installed release is **5.1.3**, using **1,136,001 bytes** of program storage and **122,336 bytes** of static RAM. Earlier versions remain identified above to preserve the history of completed hardware checks.
 
 Version 5.0.3 reported **4.71–4.72 V** during USB bench testing and held the main LEDs black because this exceeded its battery range. Version 5.0.4 addresses this by classifying 4.45–5.50 V as a USB supply only when hardware CDC positively detects a USB host. Host detection does not require an open serial monitor. With any detected USB host, brightness is capped at 16/255 and estimated LED current at 500 mA, including at battery-range voltage. The supply reading remains uncalibrated. The completed network/upload results do **not** validate visible lighting, battery voltage accuracy, operating current, cold-start endurance or Android behavior.
+
+## Startup brightness update 5.1.3
+
+- [x] Default runtime brightness reduced from 24 to 5; the startup battery display remains at 3. Dashboard initial slider agrees with the runtime default.
+- [x] Full host tests and target build passed. Arduino OTA succeeded, and post-reboot status reported version 5.1.3 and brightness 5 before any brightness-setting request. All eight images remained and no critical voltage condition was reported.
+- [x] Restored Walking Stick and the selected purple color while retaining brightness 5. Actual voltage sag under load has not been measured.
 
 ## Walking Stick update 5.1.2
 

@@ -6,7 +6,7 @@ See [BUILD.md](../BUILD.md) for pinned dependencies, board/partition settings, U
 
 No `pov-esp32` or `ESPxWebFlMgr` installation is needed. Load light sequences through the dashboard.
 
-Installed release **5.1.2** retains the open staff AP, no dashboard login and password-free ArduinoOTA. Optional home Wi-Fi credentials remain saved in NVS and apply on the next boot. The current hardware setup is left in saved client mode with all eight images retained. The USB port observed after hardware CDC re-enumeration is COM5.
+Installed release **5.1.3** retains the open staff AP, no dashboard login and password-free ArduinoOTA. Optional home Wi-Fi credentials remain saved in NVS and apply on the next boot. The current hardware setup is left in saved client mode with all eight images retained. The USB port observed after hardware CDC re-enumeration is COM5.
 
 The dashboard previews BMPs locally in the browser, with up to 12 decoded images cached in memory and no generated LittleFS assets. Its geometry follows the documented two identical 72-pixel, 50 cm arms around a 41 cm unlit grip. All three views passed live browser checks on 5.1.1; Android hardware testing remains outstanding.
 
