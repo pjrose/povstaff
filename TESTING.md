@@ -14,7 +14,7 @@ The test runner puts generated binaries in `.build/`. C++ checks can also be com
 Verified in this implementation session:
 
 - [x] Target firmware compiles for the 8 MB QT Py ESP32-S3 using core 3.3.11.
-- [x] Walking animation remains continuous when gyro speed changes after long uptime; entering POV restarts the selected image's display interval without reloading it.
+- [x] Walking Stick swing detection, noise rejection, smooth attack/retrigger, fade, IMU reset and millis wrap pass native tests; entering POV restarts the selected image's display interval without reloading it.
 - [x] Battery values: 3.20 → 0%, 3.40 → 7% / five pixels, 3.70 → 40%, 4.00 → 88%, 4.20 → 100%; interpolation is monotonic.
 - [x] Limiter clamps the first excessive frame and releases smoothly; bounded angular phase advancement.
 - [x] Ten procedural patterns produce finite/nonnegative values across 10,000 test frames.
@@ -45,9 +45,16 @@ These observations come from the connected physical staff, separate from the sim
 - [x] Valid BMP upload and replacement completed. Malformed images were rejected, and an aborted replacement recovered without destroying the existing file. The original eight images were preserved.
 - [x] The official `espota.py` uploader completed firmware transfer with Python 3.12 and explicit host binding; the staff rebooted and reported the installed version. The standalone `espota.exe` path was blocked by existing Windows firewall rules; no firewall settings were changed.
 
-The installed release is **5.1.1**, using **1,135,713 bytes** of program storage and **122,320 bytes** of static RAM. Earlier versions remain identified above to preserve the history of completed hardware checks.
+The installed release is **5.1.2**, using **1,136,001 bytes** of program storage and **122,336 bytes** of static RAM. Earlier versions remain identified above to preserve the history of completed hardware checks.
 
 Version 5.0.3 reported **4.71–4.72 V** during USB bench testing and held the main LEDs black because this exceeded its battery range. Version 5.0.4 addresses this by classifying 4.45–5.50 V as a USB supply only when hardware CDC positively detects a USB host. Host detection does not require an open serial monitor. With any detected USB host, brightness is capped at 16/255 and estimated LED current at 500 mA, including at battery-range voltage. The supply reading remains uncalibrated. The completed network/upload results do **not** validate visible lighting, battery voltage accuracy, operating current, cold-start endurance or Android behavior.
+
+## Walking Stick update 5.1.2
+
+- [x] Full host tests and target firmware build passed. Official Arduino OTA returned exit zero and the device reported 5.1.2 with all eight images retained.
+- [x] Restored locked Walking Stick, purple `ba66ff`, requested brightness 18. Four resting samples at 4.6–4.7 degrees/second reported zero output, healthy IMU and no critical voltage condition. The device was on battery at this check.
+- [x] Host tests cover the 45/18 degrees/second trigger/rearm thresholds, 40 ms attack, 800 ms fade, retrigger continuity, sustained-motion suppression and sensor loss/reset.
+- [ ] User observation of the physical swing effect and sensitivity remains outstanding.
 
 ## Completed preview checks for 5.1.1
 

@@ -34,7 +34,7 @@ cd D:\povstaff
 
 If needed, pass `-ArduinoCli 'C:\path\to\arduino-cli.exe'`. Output is in `.build/release/`. Keep the application file **POV4.1.ino.bin** for OTA. `merged.bin`, partition binaries and bootloader binaries must never be sent to OTA.
 
-Installed release **5.1.1** retains the open staff AP, dashboard without a login, and password-free ArduinoOTA. No staff credentials need configuring before flashing. Home Wi-Fi credentials are entered in the dashboard and saved in NVS; passwords are never returned by the status API. Application flashing with erase disabled preserves these saved settings. The 5.1.1 build uses **1,135,713 bytes** of program storage and **122,320 bytes** of static RAM.
+Installed release **5.1.2** retains the open staff AP, dashboard without a login, and password-free ArduinoOTA. No staff credentials need configuring before flashing. Home Wi-Fi credentials are entered in the dashboard and saved in NVS; passwords are never returned by the status API. Application flashing with erase disabled preserves these saved settings. The 5.1.2 build uses **1,136,001 bytes** of program storage and **122,336 bytes** of static RAM.
 
 Version **5.1.1** includes browser-rendered BMP previews. Its JavaScript module is embedded in firmware flash and served at `/preview.js`; build and OTA use the same commands and partition layout. No filesystem image, generated preview videos or additional libraries are required. The official `espota.py` completed the 5.1.1 update, and post-reboot status confirmed the version, home-Wi-Fi connection and all eight images. All three preview views passed live browser geometry checks without console errors.
 

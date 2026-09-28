@@ -15,11 +15,11 @@ Start with [BUILD.md](BUILD.md) for the first USB flash, [TESTING.md](TESTING.md
 
 `imagelist.txt` is no longer used. No filesystem flashing tool or separate uploader mode is needed. The two sample BMPs in `images/` can be uploaded directly.
 
-Installed release **5.1.1** includes sequence previews in the dashboard. Preview a file as a spinning staff with an 85 ms light trail, stationary animated LEDs, or a full-rotation long exposure. Play/pause and frame scrubbing let you inspect individual rows. Speed defaults to **80 RPM** (750 ms per BMP cycle), adjustable from 20 to 200 RPM. Choosing a preview does not change the real staff's selected sequence or lighting mode.
+Installed release **5.1.2** includes sequence previews in the dashboard. Preview a file as a spinning staff with an 85 ms light trail, stationary animated LEDs, or a full-rotation long exposure. Play/pause and frame scrubbing let you inspect individual rows. Speed defaults to **80 RPM** (750 ms per BMP cycle), adjustable from 20 to 200 RPM. Choosing a preview does not change the real staff's selected sequence or lighting mode.
 
 The preview follows the documented assembly: two identical **72-pixel, 50 cm arms** separated by a **41 cm unlit central grip**, with pixel 0 at each inner end and pixel 71 at each tip. It approximates a centered staff playing one BMP per turn; it is not a calibrated prediction of its physical appearance. [See the live sequence preview](docs/images/sequence-preview.png).
 
-The browser fetches each uncached BMP once and animates it locally, retaining up to 12 decoded images in memory. No generated videos or preview assets are stored in LittleFS. This keeps preview storage overhead off the staff and avoids repeated network traffic during animation. Version 5.1.1 is installed on the home network with all eight images retained.
+The browser fetches each uncached BMP once and animates it locally, retaining up to 12 decoded images in memory. No generated videos or preview assets are stored in LittleFS. This keeps preview storage overhead off the staff and avoids repeated network traffic during animation. Version 5.1.2 is installed on the home network with all eight images retained.
 
 To use home Wi-Fi, select **Client** in Settings, enter the SSID/password, save, then **power cycle**. Saving never changes the current connection. Client mode has a ten-second connection window, then enables the staff AP if unsuccessful. Losing the home network also enables the AP. Fallback stops client scans and stays in AP mode until the next boot, when the saved client choice is retried. The same dashboard, uploads and OTA are available on either connection. Client mode remains an explicit saved choice; factory default is always AP.
 
@@ -34,15 +34,17 @@ The current bench setup uses saved home Wi-Fi; open **http://povstaff.local/** o
 | Auto | Debounced motion selects POV; stationary horizontal selects LED Test; stationary upright selects Walking Stick. |
 | POV | Motion-synchronized BMP playback with bounded phase advancement. |
 | LED Test | Smooth rainbow, R/G/B/white pixel walk, fading channel test, or gradient fade. |
-| Walking Stick | Calm moving gradient, with movement increasing activity. |
+| Walking Stick | Each swing lights the selected color, then fades smoothly to darkness. Slow down between swings to retrigger. |
 | Sword | Selectable blade color with shimmer and motion accents. |
 | Flashlight | Warm-neutral white with a separate brightness cap and the shared current limit. |
 | Solid / Breathing | Color picker controls steady or breathing light. |
 | Rainbow / Chase | Procedural animations without an image file. |
 | Battery | Brief, dim voltage-based state-of-charge meter. |
-| Idle / Off | Main strips dark; onboard status indication remains available. |
+| Idle / Off | Both keep main strips dark, Wi-Fi and the onboard heartbeat active. Idle is also Auto's resting state; choosing either manually locks it. |
 
 Selecting a manual mode locks it. Unlocking returns to Auto. Color, requested/applied brightness, battery, IMU, Wi-Fi, heap, storage, and estimated current are visible on the dashboard. Procedural scenes target 100 updates/second. Uploads and firmware updates deliberately blank the main LEDs until the operation ends.
+
+Walking Stick in 5.1.2 detects a swing above 45 degrees/second, brightens over 40 ms, and fades over 800 ms. Slowing below 18 degrees/second rearms the next swing. Continuous spinning produces one pulse until you slow down; choose POV for continuous spinning imagery. After entering Walking Stick, briefly rest the staff to arm it. The selected color repeats on both ends, with a subtle increase toward the tips. IMU loss leaves this mode dark.
 
 Startup takes control of DATA/CLK, sends black twice, averages supply samples, and briefly shows a dim meter when a battery reading is available before enabling normal output. At 3.40 V the meter fills approximately five of 72 pixels. Low/invalid voltage blocks normal light output. Battery-operation defaults are brightness 24/255, maximum 64/255, flashlight cap 20/255, and an estimated total LED-current budget of 1,800 mA. These are conservative starting settings in `Config.h`, **not measured electrical guarantees**.
 

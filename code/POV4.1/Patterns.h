@@ -3,7 +3,7 @@
 #include <stddef.h>
 namespace Patterns {
 struct RGB { float r,g,b; };
-struct Context { float seconds; float speed; uint32_t color; };
+struct Context { float seconds; float speed; uint32_t color; float swing=0; };
 using Render = void (*)(RGB* pixels, size_t count, const Context& context);
 struct Definition { const char* name; Render render; };
 RGB hsv(float hue, float saturation=1, float value=1);

@@ -47,19 +47,41 @@ int main() {
       for(auto p:pixels)assert(isfinite(p.r)&&isfinite(p.g)&&isfinite(p.b)&&p.r>=0&&p.g>=0&&p.b>=0);
     }
   }
-  // A small gyro fluctuation must remain a small visual change even after
-  // long uptime. This fails if variable motion frequency multiplies uptime.
-  const float uptimes[]={0,600.25f,1800.25f,3599.5f};
+  SwingPulse swing;
+  assert(swing.update(100,true,0)==0); // no stale motion immediately after reset
+  assert(swing.update(0,true,10)==0);
+  for(unsigned t=20;t<100;t+=10)assert(swing.update(float(17+(t%3)*10),true,t)==0);
+  assert(swing.update(50,true,100)==0); // threshold starts a continuous attack
+  const float rising=swing.update(50,true,120);
+  assert(rising>0 && rising<1);
+  assert(fabsf(swing.update(50,true,140)-1)<0.001f);
+  const float fading=swing.update(50,true,340);
+  assert(fading>0 && fading<1);
+  assert(swing.update(50,true,940)==0);
+  assert(swing.update(100,true,1940)==0); // sustained motion cannot retrigger
+  assert(swing.update(10,true,1950)==0); // a slower/reversing swing rearms
+  assert(swing.update(50,true,1960)==0);
+  assert(swing.update(50,true,2000)==1);
+  const float beforeRetrigger=swing.update(10,true,2200);
+  const float afterRetrigger=swing.update(50,true,2200);
+  assert(beforeRetrigger==afterRetrigger); // no brightness jump on retrigger during fade
+  assert(swing.update(50,true,2220)>afterRetrigger);
+  assert(swing.update(50,false,2230)==0); // IMU outage always dark
+  assert(swing.update(50,true,2240)==0); // reconnection requires a new rest-to-swing edge
+  assert(swing.update(NAN,true,2250)==0);
+  swing.reset();
+  assert(swing.update(0,true,0xfffffff0U)==0);
+  assert(swing.update(50,true,0xfffffff1U)==0);
+  assert(swing.update(50,true,25U)==1); // 40ms attack crosses millis wrap
+  assert(swing.update(50,true,825U)==0);
   auto walking=Patterns::find("walking_stick");
-  for(float seconds:uptimes) {
-    Patterns::RGB before[72]={},after[72]={};
-    walking->render(before,72,{seconds,40,0x0088ff});
-    walking->render(after,72,{seconds,41,0x0088ff});
-    for(unsigned i=0;i<72;++i) {
-      assert(fabsf(after[i].r-before[i].r)<0.001f);
-      assert(fabsf(after[i].g-before[i].g)<0.001f);
-      assert(fabsf(after[i].b-before[i].b)<0.001f);
-    }
+  Patterns::RGB dark[72]={},lit[72]={};
+  walking->render(dark,72,{600,300,0xba66ff});
+  walking->render(lit,72,{600,300,0xba66ff,1});
+  for(unsigned i=0;i<72;++i) {
+    assert(dark[i].r==0 && dark[i].g==0 && dark[i].b==0);
+    assert(lit[i].r>0 && lit[i].g>0 && lit[i].b>0);
+    assert(lit[i].b>lit[i].r && lit[i].r>lit[i].g); // selected purple retained
   }
   assert(!Patterns::find("invalid"));
   puts("Engine math and all 10 procedural patterns: PASS");

@@ -13,6 +13,36 @@ inline PowerSource classifySupply(float volts, bool usbPresent, float batteryMax
   return PowerSource::Invalid;
 }
 inline float clamp(float x, float lo, float hi) { return x < lo ? lo : (x > hi ? hi : x); }
+// One flash per distinct swing. Require rest after a reset before arming, so
+// reconnecting an IMU or leaving maintenance cannot resurrect an old swing.
+class SwingPulse {
+  bool armed=false, running=false;
+  uint32_t started=0;
+  float level=0, attackFrom=0;
+public:
+  static constexpr float TRIGGER_DPS=45, REARM_DPS=18;
+  static constexpr uint32_t ATTACK_MS=40, FADE_MS=800;
+  void reset() {armed=false;running=false;level=attackFrom=0;}
+  float update(float speed, bool valid, uint32_t now) {
+    if(!valid || !isfinite(speed)) {reset();return 0;}
+    if(running) {
+      const uint32_t age=now-started; // unsigned subtraction survives millis wrap
+      if(age<ATTACK_MS) {
+        float t=float(age)/ATTACK_MS;
+        t=t*t*(3-2*t);
+        level=attackFrom+(1-attackFrom)*t;
+      } else if(age<ATTACK_MS+FADE_MS) {
+        float remaining=1-float(age-ATTACK_MS)/FADE_MS;
+        level=remaining*remaining;
+      } else {level=0;running=false;}
+    }
+    if(speed<=REARM_DPS)armed=true;
+    if(armed && speed>=TRIGGER_DPS) {
+      armed=false;running=true;started=now;attackFrom=level;
+    }
+    return level;
+  }
+};
 inline float stateOfCharge(float voltage) {
   static const float volts[] = {3.20f,3.30f,3.40f,3.50f,3.60f,3.70f,3.80f,3.90f,4.00f,4.10f,4.20f};
   static const float percent[] = {0,2,7,15,25,40,60,75,88,96,100};

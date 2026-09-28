@@ -27,13 +27,10 @@ void fade(RGB* p,size_t n,const Context& c) {
   for(size_t i=0;i<n;++i)p[i]=multiply(rgb(c.color),wave(c.seconds*0.16f-float(i)/n*0.3f));
 }
 void walking(RGB* p,size_t n,const Context& c) {
-  // Motion changes the pulse depth, not absolute-time frequency: multiplying
-  // uptime by a changing speed would cause ever-larger phase jumps.
-  const float pulseDepth=0.12f+0.12f*clamp(c.speed/500,0,1);
+  const RGB base=rgb(c.color);
   for(size_t i=0;i<n;++i) {
-    float x=float(i)/n;
-    p[i]=hsv(0.48f+x*0.15f+0.035f*sinf(c.seconds*0.3f),0.85f,
-      0.26f+pulseDepth*wave(x-c.seconds*0.12f));
+    const float tip=0.75f+0.25f*float(i)/n;
+    p[i]=multiply(base,clamp(c.swing,0,1)*tip);
   }
 }
 void sword(RGB* p,size_t n,const Context& c) {

@@ -29,6 +29,7 @@ using Patterns::RGB;
 Adafruit_DotStar strip(Config::PIXELS, DOTSTAR_BGR);
 Adafruit_NeoPixel heartbeat(1,PIN_NEOPIXEL,NEO_GRB+NEO_KHZ800);
 LSM6 imu;
+EngineMath::SwingPulse swingPulse;
 RGB frame[Config::PIXELS];
 float gammaTable[257];
 Mode requested=Mode::Auto, active=Mode::Idle, candidate=Mode::Idle;
@@ -93,6 +94,7 @@ void batteryFrame() {
 void changeMode(Mode mode) {
   if(active==mode)return;
   active=mode; angle=0; povLine=0; lastAngle=micros(); forceFrame=true;
+  swingPulse.reset();
   if(mode==Mode::Pov)Sequences::restartPlaybackClock();
   black(); // no stale bright frame survives an unavailable image/IMU
 }
@@ -131,6 +133,7 @@ void motion(uint32_t now) {
   if(uint32_t(now-lastIMU)<10)return;
   lastIMU=now;
   if(!imu.readSample()) {
+    swingPulse.reset();
     imuOK=false;speed=0;orientation="unknown";lastRetry=now;
     if(active==Mode::Pov)black();
     Serial.println("IMU read failed; motion modes suspended");return;
@@ -193,7 +196,8 @@ void procedural(uint32_t now) {
   clearFrame();
   if(active==Mode::Battery) {batteryFrame();return;}
   const Patterns::Definition* scene=active==Mode::Test?pattern:Patterns::find(MODE_NAMES[unsigned(active)]);
-  if(scene)scene->render(frame,Config::PIXELS,{float(now%3600000)*0.001f,speed,color});
+  const float swing=swingPulse.update(speed,imuOK,now);
+  if(scene)scene->render(frame,Config::PIXELS,{float(now%3600000)*0.001f,speed,color,swing});
 }
 void pov(uint32_t nowUs) {
   Sequences::tick(millis());
@@ -279,6 +283,7 @@ void update() {
   output(cap,nowUs);
 }
 void maintenance(bool activeMaintenance) {
+  swingPulse.reset();
   servicing=activeMaintenance;black();lastAngle=micros();
   if(!servicing)forceFrame=true;
 }
@@ -295,7 +300,7 @@ bool setMode(const String& name) {
 bool setPattern(const String& name) {
   const Patterns::Definition* selected=Patterns::find(name.c_str());
   if(!selected)return false;
-  pattern=selected;forceFrame=true;return true;
+  pattern=selected;swingPulse.reset();forceFrame=true;return true;
 }
 void setLocked(bool value) {
   locked=value;

@@ -1,6 +1,6 @@
 # Local dashboard API
 
-HTTP port 80 on either the open staff AP or configured LAN. Installed version **5.1.1** requires no login or Authorization header. Every mutation requires `X-POV-Request: 1`; this is a browser request check, not an authentication secret. No CORS access is granted. Ordinary POST bodies use `application/x-www-form-urlencoded`; binary uploads use the streaming contract below.
+HTTP port 80 on either the open staff AP or configured LAN. Installed version **5.1.2** requires no login or Authorization header. Every mutation requires `X-POV-Request: 1`; this is a browser request check, not an authentication secret. No CORS access is granted. Ordinary POST bodies use `application/x-www-form-urlencoded`; binary uploads use the streaming contract below.
 
 Successful mutations return `{"ok":true}`. Errors return `{"ok":false,"error":"..."}` and a non-2xx status. Missing mutation headers return HTTP 403. A deliberately rejected/aborted transfer can close the socket without a JSON body.
 
