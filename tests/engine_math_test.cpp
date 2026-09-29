@@ -27,6 +27,23 @@ int main() {
   }
   TemporalDither<216> usbDither;
   float usbTarget[216];uint8_t usbBytes[216];
+  // A uniform dim strip must not flash all 72 pixels in unison. Every
+  // refresh lights exactly eighteen pixels, with neutral RGB kept together.
+  for(float& channel:usbTarget)channel=0.25f;
+  unsigned pixelTotals[72]={};
+  for(unsigned tick=0;tick<4;++tick) {
+    assert(usbDither.quantize(usbTarget,usbBytes,1000)==54);
+    for(unsigned p=0;p<72;++p) {
+      assert(usbBytes[p*3]==usbBytes[p*3+1] && usbBytes[p*3]==usbBytes[p*3+2]);
+      pixelTotals[p]+=usbBytes[p*3];
+    }
+  }
+  for(auto total:pixelTotals)assert(total==1);
+  for(float& channel:usbTarget)channel=0.01f;
+  for(unsigned tick=0;tick<1000;++tick)assert(usbDither.quantize(usbTarget,usbBytes,1000)==0);
+  for(float& channel:usbTarget)channel=0.99f;
+  for(unsigned tick=0;tick<100;++tick)assert(usbDither.quantize(usbTarget,usbBytes,1000)==216);
+  usbDither.reset();
   for(float& channel:usbTarget)channel=3.2f;
   const unsigned usbChannelBudget=unsigned((500-288)*255/80.0f);
   for(unsigned i=0;i<1000;++i) {

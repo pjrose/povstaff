@@ -32,7 +32,7 @@ Successful mutations return `{"ok":true}`. Errors return `{"ok":false,"error":".
 
 `engine.renderer` is `baseline` or `dither`. `engine.renderStats` contains `actualFPS` (last approximately one-second output window), `sendMeanUs` and `sendMaxUs` (SPI call duration), `frames` (measured packets), `lateFrames` (missed one-millisecond intervals in B), and `targetFPS` (100 for A procedural scenes, 1000 for B output). POV scene cadence depends on motion and image height. These are firmware measurements, not optical measurements. Blackout writes are excluded from transfer counters.
 
-Counters reset on every successful `/api/renderer` request. Renderer choice is runtime-only and preserves requested mode, brightness and color. B caches fractional scene values and quantizes each packet within the current budget; it does not interpolate motion or increase sensor sampling speed.
+Counters reset on every successful `/api/renderer` request. Renderer choice is runtime-only and preserves requested mode, brightness and color. B caches fractional scene values, rounds to one-quarter output codes, staggers four pixel phases, and quantizes each packet within the current budget; it does not interpolate motion or increase sensor sampling speed.
 
 ## Sequence preview reads
 

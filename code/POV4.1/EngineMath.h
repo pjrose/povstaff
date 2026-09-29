@@ -7,15 +7,23 @@ namespace EngineMath {
 template<unsigned Count> class TemporalDither {
   float residual[Count]={};
   unsigned cursor=0;
+  // Spread identical RGB pixels across four phases. Keep RGB together so
+  // neutral fades do not acquire colored speckle. Three permutes all phases.
+  static float phase(unsigned channel) {return ((channel/3*3)%4)/4.0f;}
 public:
-  void reset() {for(float& value:residual)value=0;cursor=0;}
+  TemporalDither() {reset();}
+  void reset() {for(unsigned i=0;i<Count;++i)residual[i]=phase(i);cursor=0;}
   uint32_t quantize(const float* target,uint8_t* bytes,uint32_t budget) {
     uint32_t used=0;
     bool extra[Count]={};
     for(unsigned j=0;j<Count;++j) {
       const unsigned i=(cursor+j)%Count;
-      if(!isfinite(target[i]) || target[i]<=0) {bytes[i]=0;residual[i]=0;continue;}
-      const float value=target[i]>255?255:target[i];
+      if(!isfinite(target[i]) || target[i]<=0) {bytes[i]=0;residual[i]=phase(i);continue;}
+      // Two fractional bits bound an unconstrained constant target's pulse
+      // cycle to four refreshes. Tiny values become black instead of rare
+      // flashes; near-integer values cannot cause rare dark notches either.
+      const float value=floorf((target[i]>255?255:target[i])*4+0.5f)/4;
+      if(value==0) {bytes[i]=0;residual[i]=phase(i);continue;}
       unsigned base=unsigned(value);
       const float fraction=value-base+residual[i];
       extra[i]=fraction>=1 && base<255;

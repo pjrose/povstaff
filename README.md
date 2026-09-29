@@ -2,7 +2,7 @@
 
 Wireless control for the **Island Robotics V4.1 staff**, running on an **Adafruit QT Py ESP32-S3 with 8 MB flash**. Upload light sequences, preview them in your browser, choose motion effects, and install firmware updates over Wi-Fi.
 
-**Firmware 5.1.4** starts at brightness **5 / 255**. The staff has two illuminated ends, each with 72 pixels on front and back strips, and an unlit center grip.
+**Firmware 5.1.5** starts at brightness **5 / 255**. The staff has two illuminated ends, each with 72 pixels on front and back strips, and an unlit center grip.
 
 ![Live dashboard showing Walking Stick mode and brightness 5](docs/images/dashboard-live.png)
 
@@ -69,7 +69,7 @@ For Walking Stick, briefly hold the staff still before the first swing. A swing 
 
 Open **A/B** in the dashboard and click **Run breathing test**. Watch the actual LEDs while switching between **A · Current** and **B · Dithered**. Both retain your brightness and color; try brightness 5 and a mixed color to compare the dim end of each fade.
 
-A uses the original downward channel rounding. Experimental B retains fractional channel levels and alternates adjacent output values over time, with a packed SPI transfer and a 1,000 Hz refresh target. Animation scenes still update at about 100 Hz; POV scenes follow rotation. The dashboard shows measured output frequency, SPI transfer time, and missed target intervals. Network work can reduce the achieved rate, and motion may make dithering grain visible.
+A uses the original downward channel rounding. Experimental B rounds to one-quarter channel levels and staggers adjacent output values across pixels, with a packed SPI transfer and a 1,000 Hz refresh target. Values below 1/8 of one output code become black, preventing rare isolated pulses at the bottom of a fade. Equal RGB channels share a phase to keep neutral colors neutral. This reduces synchronized strip flicker, but does not guarantee flicker-free individual LEDs or camera footage. Animation scenes still update at about 100 Hz; POV scenes follow rotation. The dashboard shows measured output frequency, SPI transfer time, and missed target intervals. Network work can reduce the achieved rate, and motion may make dithering grain visible.
 
 Switching is immediate and resets the timing counters. Current limits remain active on every output packet. Renderer selection lasts until reboot; every boot returns to A and brightness 5.
 
