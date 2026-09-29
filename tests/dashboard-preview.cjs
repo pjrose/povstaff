@@ -28,7 +28,7 @@ function createMockServer() {
   const started = Date.now();
   const engine = {mode:'sword', requestedMode:'sword', locked:true, pattern:'rainbow',
     brightness:24, appliedBrightness:21.8, maxBrightness:64, currentMa:923, powerScale:.91,
-    renderer:'baseline',renderStats:{actualFPS:98.7,sendMeanUs:840,sendMaxUs:930,lateFrames:0,targetFPS:100,frames:987},
+    renderer:'dither',renderStats:{actualFPS:500,sendMeanUs:325,sendMaxUs:390,lateFrames:12,targetFPS:1000,frames:5000},
     batteryVoltage:3.87, batteryPercent:70.5, batteryRaw:2381, batteryAdcMv:1935,
     powerSource:'battery', externalPower:false, supplyVoltage:3.87, usbHostPresent:false,brightnessLimit:64,currentLimitMa:1800,
     imu:true, orientation:'vertical', speed:12.4, acceleration:[.02, .01, .99],
@@ -70,10 +70,6 @@ function createMockServer() {
     for await(const chunk of req){size+=chunk.length;if(size>4*1024*1024){json({ok:false,error:'Mock payload limit exceeded'},413);return;}chunks.push(chunk);}
     const body=Buffer.concat(chunks), form=new URLSearchParams(body.toString());
     switch(url.pathname) {
-      case '/api/renderer': {
-        const name=form.get('name');if(!['baseline','dither'].includes(name))return json({ok:false,error:'Unknown renderer'},400);
-        engine.renderer=name;engine.renderStats=name==='dither'?{actualFPS:740,sendMeanUs:310,sendMaxUs:390,lateFrames:12,targetFPS:1000,frames:7400}:{actualFPS:98.7,sendMeanUs:840,sendMaxUs:930,lateFrames:0,targetFPS:100,frames:987};break;
-      }
       case '/api/mode': engine.mode=engine.requestedMode=form.get('name');engine.locked=engine.mode!=='auto';break;
       case '/api/pattern': engine.pattern=form.get('name');break;
       case '/api/brightness': engine.brightness=Number(form.get('value'));engine.appliedBrightness=engine.brightness*.91;break;

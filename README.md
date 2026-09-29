@@ -2,7 +2,7 @@
 
 Wireless control for the **Island Robotics V4.1 staff**, running on an **Adafruit QT Py ESP32-S3 with 8 MB flash**. Upload light sequences, preview them in your browser, choose motion effects, and install firmware updates over Wi-Fi.
 
-**Firmware 5.1.5** starts at brightness **5 / 255**. The staff has two illuminated ends, each with 72 pixels on front and back strips, and an unlit center grip.
+**Firmware 5.2.0** starts at brightness **5 / 255**. The staff has two illuminated ends, each with 72 pixels on front and back strips, and an unlit center grip.
 
 ![Live dashboard showing Walking Stick mode and brightness 5](docs/images/dashboard-live.png)
 
@@ -65,15 +65,13 @@ Selecting a mode locks it. Turn off **Lock mode** to return to Auto. **Show on s
 
 For Walking Stick, briefly hold the staff still before the first swing. A swing above 45 degrees/second triggers a 40 ms rise followed by an 800 ms fade. Slowing below 18 degrees/second rearms the next pulse. Continuous rotation produces one pulse until you slow down; use POV for continuous spinning imagery. The color picker controls Walking Stick, Sword, Solid, Breathing, and Chase.
 
-## Compare rendering on the staff
+## Smooth rendering
 
-Open **A/B** in the dashboard and click **Run breathing test**. Watch the actual LEDs while switching between **A · Current** and **B · Dithered**. Both retain your brightness and color; try brightness 5 and a mixed color to compare the dim end of each fade.
+All main-strip output uses the same staggered four-step dithering: procedural animations, walking and sword effects, solid colors, battery displays, and BMP playback. The onboard status heartbeat is separate. There is no renderer switch; dithering is active from startup.
 
-A uses the original downward channel rounding. Experimental B rounds to one-quarter channel levels and staggers adjacent output values across pixels, with a packed SPI transfer and a 1,000 Hz refresh target. Values below 1/8 of one output code become black, preventing rare isolated pulses at the bottom of a fade. Equal RGB channels share a phase to keep neutral colors neutral. This reduces synchronized strip flicker, but does not guarantee flicker-free individual LEDs or camera footage. Animation scenes still update at about 100 Hz; POV scenes follow rotation. The dashboard shows measured output frequency, SPI transfer time, and missed target intervals. Network work can reduce the achieved rate, and motion may make dithering grain visible.
+Fractional channels are rounded to quarter-code levels, with pulses distributed across pixels. Values below 1/8 of one output code become black instead of rare flashes. Current limits apply to every packet, and Lights off remains completely black. Movement may still reveal grain.
 
-Switching is immediate and resets the timing counters. Current limits remain active on every output packet. Renderer selection lasts until reboot; every boot returns to A and brightness 5.
-
-![Actual staff dashboard with hardware A/B rendering controls](docs/images/render-ab.png)
+Open **Rendering** to see actual output frequency and transfer timing. Output refresh targets 1,000 Hz, with the achieved rate depending on network activity. Animation scenes update at about 100 Hz; POV scenes follow measured rotation and image height. Higher output refresh does not increase animation or sensor sampling rates. **Run breathing test** selects LED Test / breathing and keeps the current brightness and color.
 
 ## Brightness and power
 

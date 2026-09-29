@@ -256,11 +256,6 @@ void routes() {
     server.sendHeader("X-Content-Type-Options", "nosniff");
     server.send_P(200, "text/javascript; charset=utf-8", PREVIEW_JS);
   });
-  server.on("/api/renderer", HTTP_POST, []() {
-    if (!guard(true)) return;
-    if (!Engine::setRenderer(server.arg("name"))) fail("Unknown renderer");
-    else ok();
-  });
   server.on("/api/files/content", HTTP_GET, []() {
     if (!guard()) return;
     const String name = server.arg("name");

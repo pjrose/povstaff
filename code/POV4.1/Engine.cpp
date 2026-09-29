@@ -4,7 +4,6 @@
 #include "Sequences.h"
 #include "LSM6.h"
 #include "Patterns.h"
-#include <Adafruit_DotStar.h>
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
 #include <HWCDC.h>
@@ -27,7 +26,6 @@ static_assert(Config::USB_LED_CURRENT_MA>LED_BASE_MA,"USB LED budget must exceed
 enum class Mode : uint8_t { Auto, Pov, Test, Idle, Walking, Sword, Flashlight, Solid, Breathing, Rainbow, Chase, Battery, Off };
 constexpr const char* MODE_NAMES[]={"auto","pov","led_test","idle","walking_stick","sword","flashlight","solid","breathing","rainbow","chase","battery","off"};
 using Patterns::RGB;
-Adafruit_DotStar strip(Config::PIXELS, DOTSTAR_BGR);
 Adafruit_NeoPixel heartbeat(1,PIN_NEOPIXEL,NEO_GRB+NEO_KHZ800);
 LSM6 imu;
 EngineMath::SwingPulse swingPulse;
@@ -51,7 +49,7 @@ float powerScale=1, currentMa=LED_BASE_MA, appliedBrightness=0;
 float angle=0;
 uint32_t povLine=0, povRevision=0, lastAngle=0;
 const char* orientation="unknown";
-bool ditherRenderer=false,targetReady=false;
+bool targetReady=false;
 float targetChannels[Config::PIXELS*3]={};
 EngineMath::TemporalDither<Config::PIXELS*3> quantizer;
 uint32_t channelBudget=0,lastDither=0;
@@ -68,24 +66,29 @@ void updateFPS(uint32_t now) {
   const uint32_t elapsed=now-fpsAt;
   if(elapsed>=1000000) {actualFPS=fpsFrames*1000000.0f/elapsed;fpsAt=now;fpsFrames=0;}
 }
+void sendPacket(const uint8_t* channels,bool measure=false) {
+  constexpr unsigned packetBytes=4+Config::PIXELS*4+(Config::PIXELS+15)/16;
+  // ESP32 SPI reads complete words internally, including the final short word.
+  alignas(4) uint8_t packet[(packetBytes+3)&~3U]={};
+  for(unsigned i=0;i<Config::PIXELS;++i) {
+    packet[4+i*4]=0xff;packet[5+i*4]=channels[i*3+2];
+    packet[6+i*4]=channels[i*3+1];packet[7+i*4]=channels[i*3];
+  }
+  for(unsigned i=4+Config::PIXELS*4;i<packetBytes;++i)packet[i]=0xff;
+  const uint32_t start=micros();
+  SPI.beginTransaction(SPISettings(8000000,MSBFIRST,SPI_MODE0));
+  SPI.writeBytes(packet,packetBytes);
+  SPI.endTransaction();
+  if(measure)recordSend(start);
+}
 void sendDither(uint32_t now) {
-  if(!ditherRenderer || !targetReady || uint32_t(now-lastDither)<1000)return;
+  if(!targetReady || uint32_t(now-lastDither)<1000)return;
   const uint32_t elapsed=now-lastDither;
   if(lastDither && elapsed>=2000)statsLate+=elapsed/1000-1;
   lastDither=now;
   uint8_t channels[Config::PIXELS*3];
   const uint32_t sum=quantizer.quantize(targetChannels,channels,channelBudget);
-  uint8_t packet[4+Config::PIXELS*4+(Config::PIXELS+15)/16]={};
-  for(unsigned i=0;i<Config::PIXELS;++i) {
-    packet[4+i*4]=0xff;packet[5+i*4]=channels[i*3+2];
-    packet[6+i*4]=channels[i*3+1];packet[7+i*4]=channels[i*3];
-  }
-  for(unsigned i=4+Config::PIXELS*4;i<sizeof(packet);++i)packet[i]=0xff;
-  const uint32_t start=micros();
-  SPI.beginTransaction(SPISettings(8000000,MSBFIRST,SPI_MODE0));
-  SPI.writeBytes(packet,sizeof(packet));
-  SPI.endTransaction();
-  recordSend(start);
+  sendPacket(channels,true);
   currentMa=LED_BASE_MA+sum*(LED_CHANNEL_MA*Config::STRIPS/255);
 }
 
@@ -93,7 +96,8 @@ float wave(float phase) { return 0.5f+0.5f*sinf(phase*2*PI_F); }
 void clearFrame() { for(auto& c:frame)c={0,0,0}; }
 void black() {
   targetReady=false;quantizer.reset();lastDither=0;
-  strip.clear(); strip.show(); currentMa=LED_BASE_MA; appliedBrightness=0;
+  const uint8_t channels[Config::PIXELS*3]={};
+  sendPacket(channels);currentMa=LED_BASE_MA;appliedBrightness=0;
   forceFrame=true;
 }
 float gammaValue(float value) {
@@ -113,25 +117,14 @@ void output(uint8_t cap,uint32_t nowUs) {
   powerScale=EngineMath::limiter(demand,budget-LED_BASE_MA,powerScale,float(uint32_t(nowUs-lastOutput))*0.000001f);
   lastOutput=nowUs;
   const float scale=user*powerScale*255;
-  if(ditherRenderer) {
-    for(unsigned i=0;i<Config::PIXELS;++i) {
-      targetChannels[i*3]=frame[i].r*scale;
-      targetChannels[i*3+1]=frame[i].g*scale;
-      targetChannels[i*3+2]=frame[i].b*scale;
-    }
-    channelBudget=uint32_t((budget-LED_BASE_MA)*255/(LED_CHANNEL_MA*Config::STRIPS));
-    targetReady=true;appliedBrightness=total>0?cap*powerScale:0;forceFrame=false;
-    sendDither(micros());return;
-  }
-  uint32_t actualSum=0;
   for(unsigned i=0;i<Config::PIXELS;++i) {
-    // Quantize only once, downward, so rounding cannot exceed the budget.
-    uint8_t r=uint8_t(frame[i].r*scale),g=uint8_t(frame[i].g*scale),b=uint8_t(frame[i].b*scale);
-    strip.setPixelColor(i,r,g,b); actualSum+=r+g+b;
+    targetChannels[i*3]=frame[i].r*scale;
+    targetChannels[i*3+1]=frame[i].g*scale;
+    targetChannels[i*3+2]=frame[i].b*scale;
   }
-  currentMa=LED_BASE_MA+actualSum*(LED_CHANNEL_MA*Config::STRIPS/255);
-  appliedBrightness=total>0?cap*powerScale:0;
-  const uint32_t sendStart=micros();strip.show();recordSend(sendStart);forceFrame=false;
+  channelBudget=uint32_t((budget-LED_BASE_MA)*255/(LED_CHANNEL_MA*Config::STRIPS));
+  targetReady=true;appliedBrightness=total>0?cap*powerScale:0;forceFrame=false;
+  sendDither(micros());
 }
 void batteryFrame() {
   clearFrame();
@@ -270,7 +263,7 @@ void begin() {
   // Take ownership before Serial, filesystem or networking can stall startup.
   pinMode(DATA_PIN,OUTPUT);pinMode(CLOCK_PIN,OUTPUT);
   digitalWrite(DATA_PIN,LOW);digitalWrite(CLOCK_PIN,LOW);
-  strip.begin();strip.clear();strip.show(); // default DotStar scale remains full; RGB frames are pre-scaled
+  SPI.begin(CLOCK_PIN,-1,DATA_PIN,-1);black();
 #ifdef NEOPIXEL_POWER
   pinMode(NEOPIXEL_POWER,OUTPUT);digitalWrite(NEOPIXEL_POWER,HIGH);
 #endif
@@ -360,12 +353,6 @@ void setLocked(bool value) {
 }
 void setBrightness(uint8_t value) {brightness=value>Config::MAX_BRIGHTNESS?Config::MAX_BRIGHTNESS:value;forceFrame=true;}
 void setColor(uint32_t value) {color=value&0xffffff;forceFrame=true;}
-bool setRenderer(const String& name) {
-  if(name!="baseline" && name!="dither")return false;
-  black();ditherRenderer=name=="dither";
-  statsFrames=statsMaxUs=statsLate=fpsFrames=0;statsSendUs=0;actualFPS=0;fpsAt=micros();
-  forceFrame=true;return true;
-}
 void showBattery() {batteryOverlay=true;meterTime=millis();forceFrame=true;}
 String statusJSON() {
   char json[1536],voltageJSON[24],percentJSON[24];
@@ -388,8 +375,8 @@ String statusJSON() {
   result.remove(result.length()-1);
   char renderer[240];
   snprintf(renderer,sizeof(renderer),",\"renderer\":\"%s\",\"renderStats\":{\"actualFPS\":%.1f,\"sendMeanUs\":%.1f,\"sendMaxUs\":%lu,\"lateFrames\":%lu,\"targetFPS\":%u,\"frames\":%lu}}",
-    ditherRenderer?"dither":"baseline",actualFPS,statsFrames?float(statsSendUs)/statsFrames:0,
-    (unsigned long)statsMaxUs,(unsigned long)statsLate,ditherRenderer?1000:100,(unsigned long)statsFrames);
+    "dither",actualFPS,statsFrames?float(statsSendUs)/statsFrames:0,
+    (unsigned long)statsMaxUs,(unsigned long)statsLate,1000,(unsigned long)statsFrames);
   result+=renderer;
   return result;
 }

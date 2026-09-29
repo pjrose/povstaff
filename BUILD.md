@@ -8,9 +8,7 @@ The maintained sketch is `code/POV4.1/POV4.1.ino` for **Island Robotics V4.1 / A
 | --- | --- |
 | Arduino CLI | 1.5.1 |
 | ESP32 Arduino core | 3.3.11 |
-| Adafruit DotStar | 1.2.5 |
 | Adafruit NeoPixel | 1.15.5 |
-| Adafruit BusIO | 1.17.4 |
 | Board | `esp32:esp32:adafruit_qtpy_esp32s3_nopsram` |
 | Partition scheme | `default_8MB`: two 0x330000-byte app slots, 0x180000-byte LittleFS |
 | USB mode / CDC on boot | Hardware CDC and JTAG (`hwcdc`) / enabled (`cdc`) |
