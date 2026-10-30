@@ -14,6 +14,7 @@
 #
 import os
 import re
+from pathlib import Path
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -31,7 +32,8 @@ copyright = str(copyright_year) + ", " + str(author)
 highlight_language = "c"
 
 # The full version, including alpha/beta/rc tags
-release = re.sub('^v', '', os.popen('git describe').read().strip())
+firmware_config = Path(__file__).resolve().parents[1] / 'code' / 'POV4.1' / 'Config.h'
+release = re.search(r'VERSION\[\]\s*=\s*"([^"]+)"', firmware_config.read_text()).group(1)
 
 # The short X.Y version
 version = release
@@ -90,7 +92,6 @@ primary_domain = "c"
 html_theme = 'sphinx_rtd_theme'
 # html_theme_path = ["_themes", ]
 # html_logo = "images/roverwinglogo-gold.png"
-html_favicon = "images/favicon.ico"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

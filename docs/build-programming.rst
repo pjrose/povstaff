@@ -1,100 +1,57 @@
-Step 7: Uploading firmware
-===============================
+Firmware installation
+=======================
 
-If you are using a kit from our Tindie store which included ItsyBitsy M4 MCU, you can skip
-this step - the MCU comes already pre-programmed.
+These instructions apply to the Island Robotics V4.1 staff with the **Adafruit
+QT Py ESP32-S3, 8 MB flash, no PSRAM**. The maintained Arduino sketch is
+``code/POV4.1/POV4.1.ino``. Earlier ItsyBitsy/UF2 instructions do not apply.
 
+Build and USB installation
+--------------------------
 
-Using precomplied binaries (M4 only)
-------------------------------------
-The easiest way to program the controller is by   using pre-built
-binaries (for Itsy Bitsy M4 only).
+Use Arduino CLI 1.5.1, ESP32 Arduino core 3.3.11, Adafruit DotStar 1.2.5,
+Adafruit NeoPixel 1.15.5 and Adafruit BusIO 1.17.4. The repository's
+``tools/build.ps1 -Setup`` installs the pinned core/libraries and builds the
+firmware on Windows. Run it from the repository root.
 
-1. Download the latest release of the project from |github|.
-   Extract the downloaded archive to some place on your computer, and navigate to
-   directory `code/binaries/ItsyBitsyM4`.
+Select these Arduino board settings:
 
-2. Connect the controller assembly to your computer using a micro USB cable. If
-   you are doing it for the first time, you might get a message about
-   installing drivers; in this case, wait until it tells you that your hardware
-   is ready to use. Double-click the reset button on ItsyBitsy; your ItsyBitsy
-   should appear as an external drive on your computer, with a name like `ITSYM4BOOT`.
-   Open that drive in your file browser window; inside you should see files
-   `CURRENT.UF2`, `INDEX.HTM`, and `UF2_INFO.TXT`.
+* Adafruit QT Py ESP32-S3 No PSRAM.
+* ``default_8MB`` partition scheme.
+* Hardware CDC and JTAG; USB CDC on boot enabled.
+* Erase all flash disabled.
 
-3. First, you need to format the flash storage on ItsyBitsy board as FAT filesystem;
-   you only need to do that once. To do that, inside extracted  directory `code/binaries/ItsyBitsyM4`, find the file
-   `formatter.UF2` and drag and drop it to `ITSYM4BOOT`.  If you get a question
-   "do you want to copy this file without its properties", click "Yes".
-   After that, the ItsyBitsy will reboot, `ITSYM4BOOT` will disappear from your
-   computer, and the formatter script will run; you won't see any visible output.
+Connect a data-capable USB-C cable and select the current serial port. Use
+``tools/build.ps1 -Port COM5`` with the actual port substituted, or open the
+sketch in Arduino IDE and Upload. If connection fails, hold BOOT, press and
+release RESET, release BOOT and retry.
 
-4. Double-click the reset button on ItsyBitsy again; `ITSYM4BOOT` drive should
-   again appear on your computer. This time, drag `povstaff-vX.X.UF2` file to it.
-   Again, the ItsyBitsy will reboot. The microcontroller now contains
-   the povstaff software.
+The first USB installation establishes the OTA layout. It does not upload a
+filesystem image. On a fresh configuration, join the open ``POVSTAFFxxxx``
+network and open http://192.168.4.1/ or http://povstaff.local/. There is no login.
+Initialize storage under Device → Maintenance & storage recovery only if
+needed, then follow :doc:`usage-upload`
+to load BMPs. Saved client Wi-Fi settings survive application updates.
 
-5. Press `Reset` button once (or disconnect and reconnect the USB cable) to restart
-   the ItsyBitsy. It should now appear as an external drive with the name
-   `POVSTAFF` in your computer, which should be empty.  Find in the extracted
-   archive folder `images` and drag and drop files `rg-lines.bmp` and
-   `imagelist.txt` to `POVSTAFF`. Eject the `POVSTAFF` drive and disconnect
-   the USB cable; it is now ready for use.
+Wireless firmware updates
+-------------------------
 
-Building from source
----------------------
-An alternative way to program the controller is by building the software from
-source. You will need Arduino IDE 1.8 or later to do that. It is assumed that
-you have some experience with Arduino, e.g. know how to install libraries using
-library manager.
+Build with the same board and partition settings. Open Firmware Update in the
+dashboard and upload **POV4.1.ino.bin** from ``.build/release``. Do not upload
+merged, bootloader or partition binaries. A validated update reboots onto the
+saved network. The dashboard and preview module are built into program flash;
+no separate filesystem upload is required.
 
-1. Start Arduino IDE and install the board support files for your Itsy Bitsy (see instructions for
-   `M4 <https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4/setup>`__,
-   `nRF52840 <https://learn.adafruit.com/adafruit-itsybitsy-nrf52840-express/arduino-support-setup>`__).
+ArduinoOTA is also available without a password. Select the ``povstaff``
+network port in Arduino IDE, or use the official ESP32 core uploader:
 
-2. Make sure that you have the following libraries installed. All of them can
-   be installed using library manager:
+.. code-block:: console
 
-   *  FastLED
-   *  Adafruit_TinyUSB
-   *  Adafruit_SPIFlash
-   *  Sd_Fat (adafruit fork)
-   *  Adafruit_Sensor
-   *  Adafruit_MPU6050
-   *  POV-library
+   python espota.py -i povstaff.local -p 3232 -f .build/release/POV4.1.ino.bin
 
-3. Connect the ItsyBitsy MCU to the computer using a microUSB cable.
-   In `Tools` menu of Arduino IDE, select the correct board and port.
-   Also, if using  Itsy Bitsy M4, select `Tools->USB stack->TinyUSB`.
+Use ``192.168.4.1`` for the staff AP if mDNS is unavailable, or the staff's LAN
+address in client mode. The computer must allow UDP 3232 and the TCP callback
+from the staff. Filesystem OTA is disabled.
 
-4. First, you
-   need to format the QSPI flash storage included on the board. To do so, find
-   in the menu `File->Examples->Adafruit SPIFlash->SdFat_format`. Edit the line
-
-   .. code-block:: C
-
-      #define DISK_LABEL    "EXT FLASH"
-
-   replacing `EXT FLASH` by a label of your choice, up to 11 symbols (e.g. "POVSTAFF").
-   Upload the sketch to your board and start the serial monitor at 115200 baud.
-   You should see a message asking you to confirm reformatting; respond "OK" to
-   confirm and you should see message "Formatted flash".
-
-5. Now, you are ready to upload the POV firmware.
-   Download the latest release of POV staff project from |github| if you
-   haven't done so already. Extract the archive file and find there folder
-   `code/povstaff`. Copy the `povstaff` folder to your Arduino sketch folder.
-   Open the sketch file `povstaff.ino` inside `povstaff` folder in Arduino IDE.
-
-6. Click `Upload` to compile and upload the code. It can take  a while (mostly
-   due to use of FastLED, which is a massive library). Once you get the message
-   `Done uploading`, the programming is complete.
-
-
-7. Press `Reset` button once (or disconnect and reconnect the USB cable) to restart
-   the ItsyBitsy. It should now appear as an external drive with the name
-   `POVSTAFF` (or whatever name you have chosen in step 4) in your computer,
-   which should be empty.  Find in the extracted
-   archive folder `images` and drag and drop files `rg-lines.bmp` and
-   `imagelist.txt` to `POVSTAFF`. Eject the `POVSTAFF` drive and disconnect
-   the USB cable; it is now ready for use.
+The repository's ``BUILD.md`` contains the complete CLI command and test setup;
+``API.md`` documents dashboard automation. On Windows, run ``tools/test.cmd``
+with Visual Studio C++ Build Tools and Node.js installed for the host tests.

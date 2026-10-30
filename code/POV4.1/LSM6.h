@@ -313,6 +313,8 @@ class LSM6
     void readAcc();
     void readGyro();
     void read();
+    bool readSample(); // atomically publish a complete, checked 12-byte sample
+    bool configure(); // configure and verify all sensor registers
 
     float getSpeed();
     bool isVertical();

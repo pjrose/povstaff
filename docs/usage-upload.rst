@@ -1,110 +1,61 @@
-Uploading new images
-====================
+Uploading and previewing sequences
+====================================
 
-Finding images
---------------
-You can use any image satisfying the following requirements:
+Image requirements
+------------------
 
-* Images must be in bitmap (BMP) format, with 24 bit color depth. Use any
-  software you like to convert images in other formats to bmp - e.g. you can use
-  Microsoft Paint 3D.
+* Uncompressed **24-bit RGB BMP**, exactly **72 pixels wide**, up to **296 rows**.
+* A filename with 1-44 letters, digits, hyphens or underscores, followed by
+  ``.bmp``. Do not include spaces or directory paths.
+* At most 50 images, subject to free flash space. Pixel data is limited to
+  64,000 bytes and the complete file to 68,096 bytes.
 
-* The images are shown one **horizontal** line at a time; thus,  it is
-  recommended to use images with **width** of 72 pixels - to match the number
-  of LEDs on the staff. Maximal image size is 72x288 pixels.
+The staff reads each image one horizontal row at a time, from visual top to
+bottom. The repository's ``images`` directory contains sample BMPs. An
+``imagelist.txt`` file is not used: valid images form a filename-sorted playlist.
+Screen colors and LED colors will differ.
 
-* Image filenames must be at most 30 symbols long and can only contain letters,
-  numbers, dashes and underscores. No spaces or special symbols!
+Upload through the dashboard
+----------------------------
 
-You can create your own images or search for existing ones.  A good source for
-POV image patterns is `Visual  POI Zone <https://visualpoi.zone/patterns/>`__.
-When downloading images from there, make sure to choose `Visual poi V4 mini (72px)`
-option. You will also need to rotate images 90 degrees.
+1. Connect to the staff AP or its configured home network as described in
+   :doc:`usage-basic`. Open http://povstaff.local/; the AP address is
+   http://192.168.4.1/.
+2. If storage is unavailable, open **Device → Maintenance & storage recovery**
+   and explicitly erase/initialize sequence storage. A failed mount never
+   silently formats the filesystem.
+3. Open the sequence library and choose BMP files to upload. Multiple files
+   are queued individually, with progress and errors shown in the dashboard.
+4. Select an image for playback or use next/previous. Set the playlist duration
+   to zero to hold the selected image. Delete unwanted images from the library.
 
-Please note that the same color (i.e. the same RGB values) can look quite
-different on the screen of your computer and on LED strip. Experiment with
-colors to get some feel for it.
+There is no separate upload mode or required staff orientation. Uploading blanks
+the main LEDs temporarily. Replacing a file stages and validates the new BMP
+before publication; interrupted or invalid replacements preserve the old file.
+Files remain stored across power cycles and application firmware updates.
 
+.. figure:: images/dashboard-library.png
+   :alt: Sequence library with upload and playback controls
+   :width: 100%
 
-To help you figure out correct rotation and orientation of images, the pictures
-below show the same image in BMP file and how it will look when using the POV staff.
-
-
-.. figure:: images/image_infile.png
-   :alt: Image in file
-   :width: 80%
-
-.. figure:: images/image_onstaff.png
-   :alt: Image on staff
-   :width: 80%
-
-
-
-Directory `images` in the GitHub repository https://github.com/shurik179/povstaff
-contains some sample images and `imagelist.txt` file. These images have already been
-uploaded to the staff.
-
-
-Creating imagelist file
+Preview before playback
 -----------------------
 
-Once you have found or created your own images, move them all to the same folder
-on your computer.
+Choose Preview for a file to inspect it without changing the real staff's mode
+or selected sequence. Three views are available: spinning with an 85 ms light
+trail, stationary animated LEDs, and a full-rotation exposure. Pause, play or
+scrub individual frames; speed defaults to 80 RPM, or 750 ms per image cycle,
+and can be adjusted from 20 to 200 RPM.
 
-Now,  you need to create a list showing in which
-order these images should be played during the show. Create the file
-`imagelist.txt` in the same folder as the images  (or open the file if
-it already exists) and put there the list of image files in the order you want
-to use them in your show, one filename per line. Include the  `.bmp` extension
-in each filename, and put leading slash (/) before each filename, as shown below.
-Optionally, you can also add how long the image should be shown, in seconds
-(whole numbers only!), separated from  filename by one or more spaces:
+The model uses two identical 72-pixel, 50 cm arms and a 41 cm unlit central grip,
+following the documented assembly. Pixel 0 is at each inner end and pixel 71 at
+each tip. It approximates one BMP per turn rather than predicting calibrated
+physical appearance.
 
-.. code-block:: python
+The browser fetches an uncached image once and animates it locally, caching up
+to 12 decoded BMPs in memory. No preview videos or generated assets are stored
+on the staff.
 
-   /image1.bmp 20
-   /image2.bmp 41
-   /image5.bmp 10
-   /image1.bmp
-
-
-You can include some image file more than once, or not at all - it is your
-choice. The name of your image list must be `imagelist.txt`, all lower case.
-
-Uploading images
------------------
-
-
-To upload images, place the staff on a horizontal surface (e.g. on the floor)
-and turn it on. It will briefly light up to show the battery voltage and then
-go into upload mode; to indicate that, every 4th LED should be lighted in light
-green color.
-
-Wait for 20-30 seconds and open  the WiFi search dialog of your computer. You
-should see there a new WiFi network with the name `POVSTAFFXXXX`, where XXXX
-will be replaced by a 4-digit number, unique for each staff. Connect to this
-network, using the password which you can find in the information sheet
-included with your kit; if you misplaced it,
-email `irobotics.store@gmail.com` for help.
-
-
-Type the following address in the URL field of the browser: `http://povstaff.local:8080`
-(note: the staff doesn't support https protocol. If your browser gives you a
-warning about unsecure connection, click on "continue to site".)
-You should see the webpage of the staff, which looks as follows:
-
-.. figure:: images/upload.png
-    :alt: Upload web page
-    :width: 80%
-
-
-
-Drag and drop the image files and the imagelist.txt file to the `file drop area`
-area of the webpage.
-
-You can delete files you no longer need by pressing on  letter 'D' next to the
-filename. You can also edit imagelist.txt file online by clicking on  'E'.
-
-
-
-Once the files have been uploaded, just turn the staff off.
+.. figure:: images/sequence-preview.png
+   :alt: Two-arm staff sequence preview
+   :width: 100%

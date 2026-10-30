@@ -1,23 +1,15 @@
-# POV Staff Software
+# Firmware source
 
-This folder contains software for POV Staff project, V4.  It is intended to be complied
-and uploaded to the QT Py ESP32-S3 (or QT Py ESP32-S2) using Arduino IDE  version
-1.8 or later.   You will need the following libraries:
+Open `POV4.1/POV4.1.ino` for the Island Robotics V4.1 staff with an 8 MB Adafruit QT Py ESP32-S3.
 
-  * POV-ESP32 library from  https://github.com/shurik179/pov-esp32
+| Module | Responsibility |
+| --- | --- |
+| `Engine` / `EngineMath` | Startup, motion, supply monitoring, rendering and output limits |
+| `Patterns` | Procedural modes, including motion-driven walking pulses |
+| `Sequences` / `SequenceFormat` | Validated BMP storage, playlist and row decoding |
+| `StaffNetwork` / `NetworkValidation` | AP/client Wi-Fi, dashboard API, uploads and OTA |
+| `Dashboard` / `Preview` | Embedded dashboard and browser canvas previews |
+| `LSM6` | IMU driver |
+| `Config` | Hardware constants and runtime defaults |
 
-  * Adafruit DotStar
-
-  * Adafruit NeoPixel
-
-  * ESPxWebFlMgr from   https://github.com/holgerlembke/ESPxWebFlMgr
-
-You will need the arduino core for ESP32, see https://learn.adafruit.com/adafruit-qt-py-esp32-s2/arduino-ide-setup
-for installation instructions.
-
-Make sure that you choose the following options in the Arduino IDE tools menu
-(for ESP32-S3):
-
-* Partition scheme: *Default (3MB APP/1.5MB SPIFFS)*
-
-* Erase All Flash Before Sketch Upload: *Disabled*
+See [Build and flash](../BUILD.md), [Dashboard usage](../README.md) and [API reference](../API.md).

@@ -44,10 +44,14 @@ Turn the switch on (you will have to try both positions to figure out which of t
 The staff should come to life; it will show the battery voltage, by
 lighting part of the LED strips. The longer the strip, the higher the battery charge.
 
-Note: the software uses the motion sensor (IMU). If you turn the staff on while the
-staff (to be precise, the electronics board containing the motion sensor) is horizonal,
-the staff goes into charging mode, so it will show the battery voltage but will not
-show any images. If you want to test images, make switch the staff on holding
-the sensor board vertical. See User guide for details.
+Connect to the staff's open Wi-Fi network and open http://192.168.4.1/.
+If home Wi-Fi was previously configured, use http://povstaff.local/ on that
+network instead. Confirm the dashboard reports an available IMU and storage.
+Normal brightness starts at 5/255. Select **LED test** and the **Pixel walk**
+diagnostic to check every LED position. Do not spin exposed assemblies.
+
+Startup orientation does not select a separate charging or upload mode.
+Manual dashboard modes stay locked until you return to Auto. See
+:doc:`usage-basic` for controls and :doc:`usage-upload` to load test images.
 
 If this works, you can turn the staff off and  proceed to the next step. 
